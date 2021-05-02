@@ -1,5 +1,10 @@
 # Using Ansible to Setup GitLab using Podman Systemd Rootless Containers 
 
+1. [Install and Setup](https://github.com/HerbBoy/ansible-podman-gitlab-server-role#install-and-setup)
+2. [Using the Role](https://github.com/HerbBoy/ansible-podman-gitlab-server-role#using-the-role)
+3. [Tags Explained](https://github.com/HerbBoy/ansible-podman-gitlab-server-role#tags-explained)
+4. [Potential Bugs](https://github.com/HerbBoy/ansible-podman-gitlab-server-role#potential-bugs)
+
 ## Install and Setup
 **Note**: This Role was built on RHEL 8.3, using Ansible 2.10.8 and Podman 2.2.1.
 
