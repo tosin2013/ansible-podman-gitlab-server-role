@@ -47,17 +47,17 @@
 ## Tags Explained
 
 - initial_setup
-    This tag should be used on the initial execution of the role. This tag will setup systemd for a rootless user, setup a self signed certificate, and deploy the GitLab Server Instance.
+    - This tag should be used on the initial execution of the role. This tag will setup systemd for a rootless user, setup a self signed certificate, and deploy the GitLab Server Instance.
 - create_gitlab
-    This tag can be leveraged at any point after the initial execution of the role. This tag will rebuild the container instance, setup systemd for management of the container and open the necessary ports to access the container.
+    - This tag can be leveraged at any point after the initial execution of the role. This tag will rebuild the container instance, setup systemd for management of the container and open the necessary ports to access the container.
 - stop_gitlab
-    This tag will leverage systemd to stop the container instance gently. 
+    - This tag will leverage systemd to stop the container instance gently. 
 - restart_gitlab
-    This tag will leverage systemd to restart the container instance gently. 
+    - This tag will leverage systemd to restart the container instance gently. 
 - remove_gitlab
-    This tag will leverage systemd to stop the container instance gently. It will then use the podman module to remove the container instance (this is equal to "Podman rm <container_ID>). THIS TAG WILL NOT REMOVE VOLUMES (AKA Persistent Storage) 
+    - This tag will leverage systemd to stop the container instance gently. It will then use the podman module to remove the container instance (this is equal to "Podman rm <container_ID>). THIS TAG WILL NOT REMOVE VOLUMES (AKA Persistent Storage) 
 - destroy_gitlab
-    This tag will leverage systemd to stop the container instance gently. It will then use the podman module to remove the container instance (this is equal to "Podman rm <container_ID>). THIS TAG WILL REMOVE VOLUMES (AKA Persistent Storage) It will be as if you never had GitLab Running.
+    - This tag will leverage systemd to stop the container instance gently. It will then use the podman module to remove the container instance (this is equal to "Podman rm <container_ID>). THIS TAG WILL REMOVE VOLUMES (AKA Persistent Storage) It will be as if you never had GitLab Running.
 
 ## Potential Bugs
 Please Report all bugs found by making an issue.
