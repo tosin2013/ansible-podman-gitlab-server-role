@@ -9,32 +9,31 @@
 **Note**: This Role was built on RHEL 8.3, using Ansible 2.10.8 and Podman 2.2.1.
 
 1. Install Ansible and Git
-2. Elavate to Root
-3. Clone the repository
-4. Move podman-gitlab-server-role to /etc/ansible/roles/
+2. Clone the repository
+3. Move podman-gitlab-server-role to /etc/ansible/roles/
     ```
     cp -r podman-gitlab-server-role /etc/ansible/roles/
 
     ```
-5. Move ~/playbook/gitlab-mgmt.yml to /etc/ansible/playbooks/ (Not necessary but best practice)
+4. Move ~/playbook/gitlab-mgmt.yml to /etc/ansible/playbooks/ (Not necessary but best practice)
     ```
     cp /playbook/gitlab-mgmt.yml /etc/ansible/roles/
 
     ```
-6. Modify hosts inside of gitlab-mgmt.yml to match the host that will be running your Rootless GitLab Server Container
-7. Modify the varialbes inside of /etc/ansible/roles/podman-gitlab-server-role/defaults/main.yml to your desired values.
+5. Modify hosts inside of gitlab-mgmt.yml to match the host that will be running your Rootless GitLab Server Container
+6. Modify the varialbes inside of /etc/ansible/roles/podman-gitlab-server-role/defaults/main.yml to your desired values.
     ```
     vim etc/ansible/roles/podman-gitlab-server-role/defaults/main.yml
 
     ```
-8. There are three ansible collections you will need to install:
+7. There are three ansible collections you will need to install:
     ```
     ansible-galaxy collection install containers.podman
     ansible-galaxy collection install community.crypto
     ansible-galaxy collection install ansible.posix
 
     ```
-9. Execute the Role
+8. Execute the Role
 
 ## Using the Role
 
