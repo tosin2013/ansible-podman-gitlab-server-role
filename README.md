@@ -17,7 +17,7 @@
     ```
 4. Move ~/playbook/gitlab-mgmt.yml to /etc/ansible/playbooks/ (Not necessary but best practice)
     ```
-    cp /playbook/gitlab-mgmt.yml /etc/ansible/roles/
+    cp /playbook/gitlab-mgmt.yml /etc/ansible/playbooks/
 
     ```
 5. Modify hosts inside of gitlab-mgmt.yml to match the host that will be running your Rootless GitLab Server Container
