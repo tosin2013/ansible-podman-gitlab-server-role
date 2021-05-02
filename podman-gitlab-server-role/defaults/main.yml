@@ -1,0 +1,26 @@
+---
+# Username Variables
+gitlab_service_account: replace_with_service_account_name
+gitlab_service_account_uid: replace_with_service_account_UID
+
+# Container Image Variables
+gitlab_server_image_name: gitlab/gitlab-ce:latest
+
+# Container Name Variables
+gitlab_server_name: gitlab_server
+
+# GitLab Hostname
+gitlab_server_hostname: gitlab
+
+# Domain
+domain: '.example.com'
+
+# Rootless User Podman Ports
+gitlab_container_ssl_port: '4443:4443/tcp'
+gitlab_gui_ssl_port: '4443'
+
+# FirewallD Ports
+gitlab_firewall_ssl_port: '4443/tcp'
+
+# GitLab Container Specific Variables
+gitlab_server_restart_policy: always

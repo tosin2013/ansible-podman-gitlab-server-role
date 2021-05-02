@@ -1,0 +1,10 @@
+---
+- name: "Rootless Systemd Container Setup"
+  import_tasks: 1.rootless_systemd_setup.yml
+
+- name: "Generate Self Signed Certs"
+  import_tasks: 2.create_ssl_certs.yml
+
+- name: "Deploy GitLab Server in Rootless Container"
+  import_tasks: 3.gitlab_server_deploy.yml
+

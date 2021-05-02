@@ -1,0 +1,66 @@
+---
+- name: "Setup Rootless Systemd | Fix Podman Created State"
+  become: yes
+  copy:
+    dest: /etc/tmpfiles.d/tmp.conf
+    owner: root
+    group: root
+    mode: '0644'
+    content: |
+      #  This file is part of systemd.
+      #
+      #  systemd is free software; you can redistribute it and/or modify it
+      #  under the terms of the GNU Lesser General Public License as published by
+      #  the Free Software Foundation; either version 2.1 of the License, or
+      #  (at your option) any later version.
+
+      # See tmpfiles.d(5) for details
+
+      # Clear tmp directories separately, to make them easier to override
+      q /tmp 1777 root root 10d
+      q /var/tmp 1777 root root 30d
+
+      # Exclude user namespace mountpoints for Rootless containers
+      X /tmp/containers-user-*
+      X /tmp/podman-run-*
+      X /tmp/run-*
+
+      # Exclude namespace mountpoints created with PrivateTmp=yes
+      x /tmp/systemd-private-%b-*
+      X /tmp/systemd-private-%b-/tmp
+      x /var/tmp/systemd-private-%b-
+      X /var/tmp/systemd-private-%b-/tmp
+
+      # Remove top-level private temporary directories on each boot
+      R! /tmp/systemd-private-
+      R! /var/tmp/systemd-private-*
+  tags:
+    - initial_setup
+
+- name: "Setup Rootless Systemd | Enable Systemd for Users"
+  become: yes
+  blockinfile:
+    path: "/home/{{ gitlab_service_account }}/.bashrc"
+    insertafter: '^export PATH'
+    block: |
+      export XDG_RUNTIME_DIR="/run/user/$UID"
+      export DBUS_SESSION_BUS_ADDRESS="unix:path=${XDG_RUNTIME_DIR}/bus"
+  tags:
+    - initial_setup
+
+- name: "Setup Rootless Systemd | Check if Lingering is enabled Users"
+  become: yes
+  stat:
+    path: "/var/lib/systemd/linger/{{ gitlab_service_account }}"
+  register: lingering_status
+  tags:
+    - initial_setup
+
+- name: "Setup Rootless Systemd | Enable Lingering for Users"
+  become: yes
+  shell:
+    cmd: "loginctl enable-linger {{ gitlab_service_account }}"
+  when: not lingering_status.stat.exists
+  tags:
+    - initial_setup
+

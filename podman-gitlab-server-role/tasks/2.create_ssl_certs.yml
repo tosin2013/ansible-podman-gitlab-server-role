@@ -1,0 +1,81 @@
+---
+- name: "Create SSL Certs | Yum Install Dependencies"
+  become: yes
+  yum:
+    name:
+      - python3-pip
+      - python3-devel
+      - openssl-devel
+      - python3-libselinux
+    state: present
+  tags:
+    - initial_setup
+
+- name: "Create SSL Certs | Pip Install Dependencies"
+  become: yes
+  pip:
+    name:
+      - pip
+    state: latest
+  tags:
+    - initial_setup
+
+- name: "Create SSL Certs | Pip Install Dependencies"
+  become: yes
+  pip:
+    name:
+      - cryptography 
+      - PyOpenSSL 
+    state: latest
+  tags:
+    - initial_setup
+
+- name: "Create SSL Certs | Create SSL Directory"
+  become: yes
+  file:
+    path: "/etc/ssl/{{ gitlab_server_hostname }}"
+    state: directory
+    mode: '0775'
+  tags:
+    - initial_setup
+
+- name: "Create SSL Certs | Generate Private Key"
+  become: yes
+  openssl_privatekey:
+    path: "/etc/ssl/{{ gitlab_server_hostname }}/{{ gitlab_server_hostname }}{{ domain }}.key"
+  tags:
+    - initial_setup
+
+- name: "Create SSL Certs | Generate SSL csr"
+  become: yes
+  openssl_csr:
+    path: "/etc/ssl/{{ gitlab_server_hostname }}/{{ gitlab_server_hostname }}{{ domain }}.csr"
+    privatekey_path: "/etc/ssl/{{ gitlab_server_hostname }}/{{ gitlab_server_hostname }}{{ domain }}.key"
+    common_name: "{{ gitlab_server_hostname }}{{ domain }}"
+  tags:
+    - initial_setup
+
+- name: "Create SSL Certs | Generate Self Signed Cert"
+  become: yes
+  x509_certificate:
+    csr_path: "/etc/ssl/{{ gitlab_server_hostname }}/{{ gitlab_server_hostname }}{{ domain }}.csr"
+    path: "/etc/ssl/{{ gitlab_server_hostname }}/{{ gitlab_server_hostname }}{{ domain }}.crt"
+    privatekey_path: "/etc/ssl/{{ gitlab_server_hostname }}/{{ gitlab_server_hostname }}{{ domain }}.key"
+    provider: selfsigned
+  tags:
+    - initial_setup
+
+- name: "Create SSL Certs | Copy SSL Certs to {{ gitlab_service_account }} Home"
+  become: yes
+  copy:
+    src: "{{ item }}"
+    dest: "/home/{{ gitlab_service_account }}/"
+    owner: "{{ gitlab_service_account }}"
+    group: "{{ gitlab_service_account }}"
+    remote_src: yes
+  with_items:
+    - "/etc/ssl/{{ gitlab_server_hostname }}/{{ gitlab_server_hostname }}{{ domain }}.key"
+    - "/etc/ssl/{{ gitlab_server_hostname }}/{{ gitlab_server_hostname }}{{ domain }}.crt"
+  tags:
+    - initial_setup
+

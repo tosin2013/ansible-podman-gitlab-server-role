@@ -1,0 +1,52 @@
+---
+- name: "Gitlab Management | Restart {{ gitlab_server_name }} Container"
+  become: yes
+  become_user: "{{ gitlab_service_account }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ gitlab_service_account_uid }}"
+  systemd:
+    name: "container-{{ gitlab_server_name }}.service"
+    state: restarted
+    daemon_reload: yes
+    scope: user
+  tags:
+    - restart_gitlab
+
+- name: "Gitlab Management | Stop {{ gitlab_server_name }} Container"
+  become: yes
+  become_user: "{{ gitlab_service_account }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ gitlab_service_account_uid }}"
+  systemd:
+    name: "container-{{ gitlab_server_name }}.service"
+    state: stopped
+    daemon_reload: yes
+    scope: user
+  tags:
+    - stop_gitlab
+    - remove_gitlab
+    - destroy_gitlab
+
+- name: "Gitlab Management | Remove {{ gitlab_server_name }} Container"
+  become: yes
+  become_user: "{{ gitlab_service_account }}"
+  podman_container:
+    name: "{{ gitlab_server_name }}"
+    state: absent
+  tags:
+    - remove_gitlab
+    - destroy_gitlab
+
+- name: "Gitlab Management | Remove {{ gitlab_server_name }} Container"
+  become: yes
+  become_user: "{{ gitlab_service_account }}"
+  podman_volume:
+    name: "{{ item }}"
+    state: absent
+  with_items:
+    - git_app_data
+    - git_logs
+    - git_config_data
+  tags:
+    - destroy_gitlab
+
