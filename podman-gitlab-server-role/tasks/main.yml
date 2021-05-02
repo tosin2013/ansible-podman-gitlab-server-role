@@ -8,6 +8,6 @@
 - name: "Deploy GitLab Server in Rootless Container"
   import_tasks: 3.gitlab_server_deploy.yml
 
-- name: "Manage GitLab Server in Rootless Container"
+- name: "Manage GitLab Server Rootless Container"
   import_tasks: 4.gitlab_server_mgmt.yml
 
