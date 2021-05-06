@@ -48,6 +48,7 @@
       - git_config_data:/var/opt/gitlab
     ports:
       - "{{ gitlab_container_ssl_port }}"
+      - "{{ gitlab_container_ssh_port }}"
   tags:
     - initial_setup
     - create_gitlab
