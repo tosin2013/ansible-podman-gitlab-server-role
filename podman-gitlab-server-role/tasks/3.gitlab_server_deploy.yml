@@ -26,9 +26,12 @@
 - name: "Deploy GitLab | Open Firewall for {{ gitlab_server_name }} Container"
   become: yes
   firewalld:
-    port: "{{ gitlab_firewall_ssl_port }}"
+    port: "{{ item }}"
     state: enabled
     permanent: yes
+  with_items:
+    - "{{ gitlab_container_ssl_port }}"
+    - "{{ gitlab_container_ssh_port }}"
   tags:
     - initial_setup
     - create_gitlab
