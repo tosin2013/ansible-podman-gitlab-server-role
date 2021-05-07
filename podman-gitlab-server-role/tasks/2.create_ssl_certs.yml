@@ -11,7 +11,7 @@
   tags:
     - initial_setup
 
-- name: "Create SSL Certs | Pip Install Dependencies"
+- name: "Create SSL Certs | Update Pip"
   become: yes
   pip:
     name:
@@ -42,7 +42,8 @@
 - name: "Create SSL Certs | Generate Private Key"
   become: yes
   openssl_privatekey:
-    path: "/etc/ssl/{{ gitlab_server_hostname }}/{{ gitlab_server_hostname }}{{ domain }}.key"
+    path: "/etc/ssl/{{ gitlab_server_hostname }}/{{ gitlab_server_hostname }}{{ domain }}.pem"
+    select_crypto_backend: cryptography
   tags:
     - initial_setup
 
@@ -50,7 +51,8 @@
   become: yes
   openssl_csr:
     path: "/etc/ssl/{{ gitlab_server_hostname }}/{{ gitlab_server_hostname }}{{ domain }}.csr"
-    privatekey_path: "/etc/ssl/{{ gitlab_server_hostname }}/{{ gitlab_server_hostname }}{{ domain }}.key"
+    privatekey_path: "/etc/ssl/{{ gitlab_server_hostname }}/{{ gitlab_server_hostname }}{{ domain }}.pem"
+    select_crypto_backend: cryptography
     common_name: "{{ gitlab_server_hostname }}{{ domain }}"
   tags:
     - initial_setup
@@ -60,7 +62,8 @@
   x509_certificate:
     csr_path: "/etc/ssl/{{ gitlab_server_hostname }}/{{ gitlab_server_hostname }}{{ domain }}.csr"
     path: "/etc/ssl/{{ gitlab_server_hostname }}/{{ gitlab_server_hostname }}{{ domain }}.crt"
-    privatekey_path: "/etc/ssl/{{ gitlab_server_hostname }}/{{ gitlab_server_hostname }}{{ domain }}.key"
+    privatekey_path: "/etc/ssl/{{ gitlab_server_hostname }}/{{ gitlab_server_hostname }}{{ domain }}.pem"
+    selfsigned_version: 3
     provider: selfsigned
   tags:
     - initial_setup
@@ -74,7 +77,7 @@
     group: "{{ gitlab_service_account }}"
     remote_src: yes
   with_items:
-    - "/etc/ssl/{{ gitlab_server_hostname }}/{{ gitlab_server_hostname }}{{ domain }}.key"
+    - "/etc/ssl/{{ gitlab_server_hostname }}/{{ gitlab_server_hostname }}{{ domain }}.pem"
     - "/etc/ssl/{{ gitlab_server_hostname }}/{{ gitlab_server_hostname }}{{ domain }}.crt"
   tags:
     - initial_setup

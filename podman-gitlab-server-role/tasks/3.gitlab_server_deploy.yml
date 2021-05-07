@@ -30,11 +30,17 @@
     state: enabled
     permanent: yes
   with_items:
-    - "{{ gitlab_container_ssl_port }}"
-    - "{{ gitlab_container_ssh_port }}"
+    - "{{ gitlab_firewall_ssl_port }}"
+    - "{{ gitlab_firewall_ssh_port }}"
   tags:
     - initial_setup
     - create_gitlab
+  register: firewall_status
+
+- name: "Deploy GitLab | Reload FirewallD"
+  become: yes
+  shell: "firewall-cmd --complete-reload"
+  when: firewall_status.results.changed | bool
 
 - name: "Deploy GitLab | Create {{ gitlab_server_name }} Container"
   become: yes
@@ -72,7 +78,7 @@
      # Add Support for SSL 
      external_url "https://{{ gitlab_server_hostname }}{{ domain }}:{{ gitlab_gui_ssl_port }}/"
      nginx['ssl_certificate'] = "/etc/gitlab/ssl/{{ gitlab_server_hostname }}{{ domain }}.crt"
-     nginx['ssl_certificate_key'] = "/etc/gitlab/ssl/{{ gitlab_server_hostname }}{{ domain }}.key"
+     nginx['ssl_certificate_key'] = "/etc/gitlab/ssl/{{ gitlab_server_hostname }}{{ domain }}.pem"
   tags:
     - initial_setup
     - create_gitlab
@@ -91,7 +97,7 @@
   become_user: "{{ gitlab_service_account }}"
   shell: "podman cp {{ item }}"
   with_items:
-    - "/home/{{ gitlab_service_account }}/{{ gitlab_server_hostname }}{{ domain }}.key {{ gitlab_server_name }}:/etc/gitlab/ssl"
+    - "/home/{{ gitlab_service_account }}/{{ gitlab_server_hostname }}{{ domain }}.pem {{ gitlab_server_name }}:/etc/gitlab/ssl"
     - "/home/{{ gitlab_service_account }}/{{ gitlab_server_hostname }}{{ domain }}.crt {{ gitlab_server_name }}:/etc/gitlab/ssl"
   when: not gitlab_ssl_dir_status.stat.exists | bool
   tags:

@@ -15,13 +15,15 @@ gitlab_server_hostname: gitlab
 # Domain
 domain: '.example.com'
 
-# Rootless User Podman Ports
-gitlab_container_ssl_port: '4443:4443/tcp'
-gitlab_gui_ssl_port: '4443'
+# Podman Ports
+gitlab_container_ssl_port: '2443:2443/tcp'
+gitlab_gui_ssl_port: '2443'
 gitlab_container_ssh_port: '2222:22/tcp'
 
 # FirewallD Ports
-gitlab_firewall_ssl_port: '4443/tcp'
+gitlab_firewall_ssl_port: '2443/tcp'
+gitlab_firewall_ssh_port: '2222/tcp'
 
 # GitLab Container Specific Variables
 gitlab_server_restart_policy: always
+
