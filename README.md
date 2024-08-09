@@ -5,8 +5,16 @@
 3. [Tags Explained](https://github.com/HerbBoy/ansible-podman-gitlab-server-role#tags-explained)
 4. [Potential Bugs](https://github.com/HerbBoy/ansible-podman-gitlab-server-role#potential-bugs)
 
+## Prepare Enviornment
+```bash
+git clone https://github.com/tosin2013/ansible-podman-gitlab-server-role.git /opt/ansible-podman-gitlab-server-role
+mkdir -p ~/.ansible/roles/
+sudo ln -s /opt/ansible-podman-gitlab-server-role/podman-gitlab-server-role /etc/ansible/roles
+```
+
+
 ## Install and Setup
-**Note**: This Role was built on RHEL 8.3, using Ansible 2.10.8 and Podman 2.2.1.
+**Note**: This Role was built on RHEL 9.4, using Ansible 2.10.8 and Podman 2.2.1.
 
 1. Install Ansible and Git
 2. Clone the repository
@@ -15,16 +23,47 @@
     cp -r podman-gitlab-server-role /etc/ansible/roles/
 
     ```
-4. Move ~/playbook/gitlab-mgmt.yml to /etc/ansible/playbooks/ (Not necessary but best practice)
+4. Move /opt/ansible-podman-gitlab-server-role/playbooks/gitlab-mgmt.yml to $HOME 
     ```
-    cp /playbook/gitlab-mgmt.yml /etc/ansible/playbooks/
+    cp /opt/ansible-podman-gitlab-server-role/playbooks/gitlab-mgmt.yml $HOME 
 
     ```
 5. Modify hosts inside of gitlab-mgmt.yml to match the host that will be running your Rootless GitLab Server Container
-6. Modify the varialbes inside of /etc/ansible/roles/podman-gitlab-server-role/defaults/main.yml to your desired values.
+6. Modify the varialbes inside of ~/.ansible/roles/podman-gitlab-server-role/defaults/main.yml to your desired values.
     ```
-    vim etc/ansible/roles/podman-gitlab-server-role/defaults/main.yml
+    $ GILAB_SERVICE_ACCOUNT=gitlab
+    $ GILAB_SERVICE_ACCOUNT_UID=1000
+    $ DOMAIN=.example.com
+    $ cat > /etc/ansible/roles/podman-gitlab-server-role/defaults/main.yml <<EOF
+    ---
+    # Username Variables
+    gitlab_service_account: ${GILAB_SERVICE_ACCOUNT}
+    gitlab_service_account_uid: ${GILAB_SERVICE_ACCOUNT_UID}
 
+    # Container Image Variables
+    gitlab_server_image_name: gitlab/gitlab-ce:latest
+
+    # Container Name Variables
+    gitlab_server_name: gitlab_server
+
+    # GitLab Hostname
+    gitlab_server_hostname: gitlab
+
+    # Domain
+    domain: '${DOMAIN}'
+
+    # Podman Ports
+    gitlab_container_ssl_port: '2443:2443/tcp'
+    gitlab_gui_ssl_port: '2443'
+    gitlab_container_ssh_port: '2222:22/tcp'
+
+    # FirewallD Ports
+    gitlab_firewall_ssl_port: '2443/tcp'
+    gitlab_firewall_ssh_port: '2222/tcp'
+
+    # GitLab Container Specific Variables
+    gitlab_server_restart_policy: always
+    EOF
     ```
 7. There are three ansible collections you will need to install:
     ```
