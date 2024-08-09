@@ -88,7 +88,7 @@
   become_user: "{{ gitlab_service_account }}"
   podman_container:
     name: "{{ gitlab_server_name }}"
-    state: restarted
+    state: started
   when: gitlab_container_exists | bool
   tags:
     - initial_setup
@@ -121,6 +121,21 @@
     - initial_setup
     - create_gitlab
 
+- name: "Deploy GitLab | Set correct permissions on SSL files"
+  become_user: "{{ gitlab_service_account }}"
+  shell: "podman exec {{ gitlab_server_name }} chmod 600 /etc/gitlab/ssl/*"
+  tags:
+    - initial_setup
+    - create_gitlab
+
+- name: "Deploy GitLab | Reconfigure GitLab after changes"
+  become_user: "{{ gitlab_service_account }}"
+  shell: "podman exec {{ gitlab_server_name }} gitlab-ctl reconfigure"
+  when: gitlab_container_exists | bool
+  tags:
+    - initial_setup
+    - create_gitlab
+    
 - name: "Deploy GitLab | Create Systemd User Directory"
   become_user: "{{ gitlab_service_account }}"
   file:
