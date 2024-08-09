@@ -32,13 +32,11 @@ sudo ln -s /opt/ansible-podman-gitlab-server-role/podman-gitlab-server-role /etc
 6. Modify the varialbes inside of ~/.ansible/roles/podman-gitlab-server-role/defaults/main.yml to your desired values.
     ```
     $ GILAB_SERVICE_ACCOUNT=gitlab
-    $ GILAB_SERVICE_ACCOUNT_UID=1000
     $ DOMAIN=.example.com
     $ cat > /etc/ansible/roles/podman-gitlab-server-role/defaults/main.yml <<EOF
     ---
     # Username Variables
     gitlab_service_account: ${GILAB_SERVICE_ACCOUNT}
-    gitlab_service_account_uid: ${GILAB_SERVICE_ACCOUNT_UID}
 
     # Container Image Variables
     gitlab_server_image_name: gitlab/gitlab-ce:latest

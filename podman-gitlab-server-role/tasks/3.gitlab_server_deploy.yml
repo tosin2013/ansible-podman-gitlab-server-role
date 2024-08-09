@@ -58,8 +58,6 @@
     ports:
       - "{{ gitlab_container_ssl_port }}"
       - "{{ gitlab_container_ssh_port }}"
-    security_opts:
-      - "label=disable"
   tags:
     - initial_setup
     - create_gitlab
