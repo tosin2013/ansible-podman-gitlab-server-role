@@ -77,7 +77,7 @@ sudo ln -s /opt/ansible-podman-gitlab-server-role/podman-gitlab-server-role /etc
 
 - To execute the playbook for the first time use the following:
     ```
-    ansible-playbook gitlab-mgmt.yml --tag initial_setup --ask-become --ask-pass
+    ansible-playbook gitlab-mgmt.yml
 
     ```
 - Anytime after this use the respected tag that fits your use case.
