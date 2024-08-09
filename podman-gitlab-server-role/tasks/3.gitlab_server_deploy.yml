@@ -190,3 +190,21 @@
     - initial_setup
     - create_gitlab
 
+- name: "Deploy GitLab | Check {{ gitlab_server_name }} Container Status"
+  become: yes
+  become_user: "{{ gitlab_service_account }}"
+  podman_container_info:
+    name: "{{ gitlab_server_name }}"
+  register: gitlab_container_status
+  tags:
+    - initial_setup
+    - create_gitlab
+
+- name: "Deploy GitLab | Fail if {{ gitlab_server_name }} Container is not Running"
+  fail:
+    msg: "The {{ gitlab_server_name }} container failed to start. Please check the logs for more details."
+  when: gitlab_container_status.containers | length == 0 or gitlab_container_status.containers[0].State != 'running'
+  tags:
+    - initial_setup
+    - create_gitlab
+
