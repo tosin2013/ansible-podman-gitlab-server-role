@@ -52,9 +52,9 @@
     hostname: "{{ gitlab_server_hostname }}{{ domain }}"
     restart_policy: "{{ gitlab_server_restart_policy }}"
     volumes:
-      - git_app_data:/etc/gitlab
-      - git_logs:/var/log/gitlab
-      - git_config_data:/var/opt/gitlab
+      - git_app_data:/etc/gitlab:Z
+      - git_logs:/var/log/gitlab:Z
+      - git_config_data:/var/opt/gitlab:Z
     ports:
       - "{{ gitlab_container_ssl_port }}"
       - "{{ gitlab_container_ssh_port }}"
