@@ -69,6 +69,18 @@
   tags:
     - initial_setup
 
+- name: "Setup Rootless Systemd | Ensure newuidmap and newgidmap have correct permissions"
+  become: yes
+  command: "setcap cap_setuid+ep /usr/bin/newuidmap"
+  tags:
+    - initial_setup
+
+- name: "Setup Rootless Systemd | Ensure newgidmap has correct permissions"
+  become: yes
+  command: "setcap cap_setgid+ep /usr/bin/newgidmap"
+  tags:
+    - initial_setup
+
 - name: "Setup Rootless Systemd | Enable Systemd for Users"
   become: yes
   blockinfile:
