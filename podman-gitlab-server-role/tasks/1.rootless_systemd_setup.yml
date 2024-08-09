@@ -43,10 +43,14 @@
     key: "{{ gitlab_service_account }}"
     fail_key: false
   register: user_check
+  tags:
+    - initial_setup
 
 - name: Set fact for user_exists
   set_fact:
     user_exists: "{{ user_check.key is defined and user_check.key != '' }}"
+  tags:
+    - initial_setup
 
 - name: If gitlab_service_account user does not exist, create it
   become: yes
@@ -54,6 +58,8 @@
     name: "{{ gitlab_service_account }}"
     state: present
   when: not user_exists
+  tags:
+    - initial_setup
 
 - name: "Setup Rootless Systemd | Enable Systemd for Users"
   become: yes
