@@ -40,7 +40,7 @@
 - name: "Deploy GitLab | Reload FirewallD"
   become: yes
   shell: "firewall-cmd --complete-reload"
-  when: firewall_status.results.changed | bool
+  when: firewall_status.results | selectattr('changed') | list | length > 0
 
 - name: "Deploy GitLab | Create {{ gitlab_server_name }} Container"
   become: yes
