@@ -84,6 +84,24 @@
     - initial_setup
     - create_gitlab
 
+- name: "Deploy GitLab | Restart {{ gitlab_server_name }} Container"
+  become_user: "{{ gitlab_service_account }}"
+  podman_container:
+    name: "{{ gitlab_server_name }}"
+    state: restarted
+  when: gitlab_container_exists | bool
+  tags:
+    - initial_setup
+    - create_gitlab
+
+- name: "Deploy GitLab | Pause for 1 Minute After Restart"
+  pause:
+    minutes: 1
+  when: gitlab_container_exists | bool
+  tags:
+    - initial_setup
+    - create_gitlab
+
 - name: "Deploy GitLab | Create GitLab SSL Directory"
   become_user: "{{ gitlab_service_account }}"
   shell: "podman exec -it {{ gitlab_server_name }} mkdir /etc/gitlab/ssl/"
