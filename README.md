@@ -14,7 +14,7 @@ sudo ln -s /opt/ansible-podman-gitlab-server-role/podman-gitlab-server-role /etc
 
 
 ## Install and Setup
-**Note**: This Role was built on RHEL 9.4, using Ansible 2.10.8 and Podman 2.2.1.
+**Note**: This Role was built on RHEL 9.4, using Ansible 2.14.9 and Podman 4.6.1.
 
 1. Install Ansible and Git
 2. Clone the repository
