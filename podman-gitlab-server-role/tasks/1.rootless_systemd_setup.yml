@@ -53,6 +53,22 @@
   tags:
     - initial_setup
 
+- name: Get gitlab_service_account_uid
+  getent:
+    database: passwd
+    key: "{{ gitlab_service_account }}"
+    split: ":"
+  register: gitlab_service_account_info
+  tags:
+    - initial_setup
+
+- name: Set gitlab_service_account_uid fact
+  set_fact:
+    gitlab_service_account_uid: "{{ gitlab_service_account_info.key.split(':')[2] }}"
+  when: gitlab_service_account_info.key is defined
+  tags:
+    - initial_setup
+
 - name: "Setup Rootless Systemd | Enable Systemd for Users"
   become: yes
   blockinfile:
@@ -60,7 +76,7 @@
     insertafter: '^export PATH'
     block: |
       # Updated for compatibility with 9.x
-      export XDG_RUNTIME_DIR="/run/user/$UID"
+      export XDG_RUNTIME_DIR="/run/user/{{ gitlab_service_account_uid }}"
       export DBUS_SESSION_BUS_ADDRESS="unix:path=${XDG_RUNTIME_DIR}/bus"
   tags:
     - initial_setup
@@ -80,4 +96,3 @@
   when: not lingering_status.stat.exists
   tags:
     - initial_setup
-
