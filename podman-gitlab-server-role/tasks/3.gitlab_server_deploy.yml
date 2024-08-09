@@ -69,6 +69,23 @@
     - initial_setup
     - create_gitlab
 
+- name: "Check if GitLab container exists"
+  become: yes
+  become_user: "{{ gitlab_service_account }}"
+  podman_container_info:
+    name: "{{ gitlab_server_name }}"
+  register: gitlab_container_info
+  tags:
+    - initial_setup
+    - create_gitlab
+
+- name: "Set fact for gitlab_container_exists"
+  set_fact:
+    gitlab_container_exists: "{{ gitlab_container_info.containers | length > 0 }}"
+  tags:
+    - initial_setup
+    - create_gitlab
+
 - name: "Deploy GitLab | Modify gitlab.rb to Support FQDN"
   become: yes
   become_user: "{{ gitlab_service_account }}"
@@ -79,6 +96,7 @@
      external_url "https://{{ gitlab_server_hostname }}{{ domain }}:{{ gitlab_gui_ssl_port }}/"
      nginx['ssl_certificate'] = "/etc/gitlab/ssl/{{ gitlab_server_hostname }}{{ domain }}.crt"
      nginx['ssl_certificate_key'] = "/etc/gitlab/ssl/{{ gitlab_server_hostname }}{{ domain }}.pem"
+  when: gitlab_container_exists | bool
   tags:
     - initial_setup
     - create_gitlab
