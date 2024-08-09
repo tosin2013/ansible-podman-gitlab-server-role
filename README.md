@@ -37,6 +37,7 @@ sudo ln -s /opt/ansible-podman-gitlab-server-role/podman-gitlab-server-role /etc
     ---
     # Username Variables
     gitlab_service_account: ${GILAB_SERVICE_ACCOUNT}
+    gitlab_service_account_uid: 1001
 
     # Container Image Variables
     gitlab_server_image_name: gitlab/gitlab-ce:latest

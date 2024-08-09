@@ -36,6 +36,7 @@
   tags:
     - remove_gitlab
     - destroy_gitlab
+    - delete_gitlab
 
 - name: "Gitlab Management | Remove {{ gitlab_server_name }} Container"
   become: yes
