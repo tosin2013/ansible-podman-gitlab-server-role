@@ -53,12 +53,6 @@
     - initial_setup
     - create_gitlab
 
-- name: "Deploy GitLab | Pause for 30 Seconds"
-  pause:
-    seconds: 30
-  tags:
-    - initial_setup
-    - create_gitlab
 
 - name: "Check if GitLab container exists"
   become_user: "{{ gitlab_service_account }}"
@@ -145,6 +139,16 @@
     - initial_setup
     - create_gitlab
 
+- name: "Deploy GitLab | Wait for {{ gitlab_server_name }} to start"
+  become_user: "{{ gitlab_service_account }}"
+  wait_for:
+    path: "/home/{{ gitlab_service_account }}/.config/systemd/user/container-{{ gitlab_server_name }}.service.status"
+    state: started
+    timeout: 60
+  tags:
+    - initial_setup
+    - create_gitlab
+
 - name: "Deploy GitLab | Start {{ gitlab_server_name }} with Systemd"
   become_user: "{{ gitlab_service_account }}"
   environment:
@@ -178,11 +182,15 @@
     - initial_setup
     - create_gitlab
 
-- name: "Deploy GitLab | Check {{ gitlab_server_name }} Container Status"
+- name: "Deploy GitLab | Ensure {{ gitlab_server_name }} Container is Running"
   become_user: "{{ gitlab_service_account }}"
-  podman_container_info:
+  podman_container:
     name: "{{ gitlab_server_name }}"
+    state: started
   register: gitlab_container_status
+  until: gitlab_container_status.state.running
+  retries: 10
+  delay: 30
   tags:
     - initial_setup
     - create_gitlab
@@ -190,7 +198,7 @@
 - name: "Deploy GitLab | Fail if {{ gitlab_server_name }} Container is not Running"
   fail:
     msg: "The {{ gitlab_server_name }} container failed to start. Please check the logs for more details."
-  when: gitlab_container_status.containers | length == 0 or gitlab_container_status.containers[0].State != 'running'
+  when: gitlab_container_status.state.running is not defined or not gitlab_container_status.state.running
   tags:
     - initial_setup
     - create_gitlab
