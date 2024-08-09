@@ -169,3 +169,24 @@
     - initial_setup
     - create_gitlab
 
+- name: "Deploy GitLab | Verify {{ gitlab_server_name }} Container Status"
+  become: yes
+  become_user: "{{ gitlab_service_account }}"
+  podman_container_info:
+    name: "{{ gitlab_server_name }}"
+  register: gitlab_container_status
+  tags:
+    - initial_setup
+    - create_gitlab
+
+- name: "Deploy GitLab | Ensure {{ gitlab_server_name }} Container is Running"
+  become: yes
+  become_user: "{{ gitlab_service_account }}"
+  podman_container:
+    name: "{{ gitlab_server_name }}"
+    state: started
+  when: gitlab_container_status.containers | length == 0 or gitlab_container_status.containers[0].State != 'running'
+  tags:
+    - initial_setup
+    - create_gitlab
+

@@ -108,3 +108,17 @@
   when: not lingering_status.stat.exists
   tags:
     - initial_setup
+
+- name: "Setup Rootless Systemd | Ensure Systemd User Service is Running"
+  become: yes
+  become_user: "{{ gitlab_service_account }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ gitlab_service_account_uid }}"
+  systemd:
+    name: "container-{{ gitlab_server_name }}.service"
+    state: started
+    enabled: yes
+    daemon_reload: yes
+    scope: user
+  tags:
+    - initial_setup
