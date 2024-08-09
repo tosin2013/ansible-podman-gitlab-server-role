@@ -1,6 +1,5 @@
 ---
 - name: "Setup Rootless Systemd | Fix Podman Created State"
-  become: yes
   copy:
     dest: /etc/tmpfiles.d/tmp.conf
     owner: root
@@ -45,7 +44,6 @@
     - initial_setup
 
 - name: If gitlab_service_account user does not exist, create it
-  become: yes
   user:
     name: "{{ gitlab_service_account }}"
     state: present
@@ -70,19 +68,32 @@
     - initial_setup
 
 - name: "Setup Rootless Systemd | Ensure newuidmap and newgidmap have correct permissions"
-  become: yes
   command: "setcap cap_setuid+ep /usr/bin/newuidmap"
   tags:
     - initial_setup
 
 - name: "Setup Rootless Systemd | Ensure newgidmap has correct permissions"
-  become: yes
   command: "setcap cap_setgid+ep /usr/bin/newgidmap"
   tags:
     - initial_setup
 
+- name: "Setup Rootless Systemd | Ensure systemd user service directory exists"
+  file:
+    path: "/home/{{ gitlab_service_account }}/.config/systemd/user"
+    state: directory
+    owner: "{{ gitlab_service_account }}"
+    group: "{{ gitlab_service_account }}"
+    mode: '0755'
+  tags:
+    - initial_setup
+
+- name: "Setup Rootless Systemd | Ensure XDG_RUNTIME_DIR is set"
+  set_fact:
+    xdg_runtime_dir: "/run/user/{{ gitlab_service_account_uid }}"
+  tags:
+    - initial_setup
+
 - name: "Setup Rootless Systemd | Enable Systemd for Users"
-  become: yes
   blockinfile:
     path: "/home/{{ gitlab_service_account }}/.bashrc"
     insertafter: '^export PATH'
@@ -93,8 +104,7 @@
   tags:
     - initial_setup
 
-- name: "Setup Rootless Systemd | Check if Lingering is enabled Users"
-  become: yes
+- name: "Setup Rootless Systemd | Check if Lingering is enabled for Users"
   stat:
     path: "/var/lib/systemd/linger/{{ gitlab_service_account }}"
   register: lingering_status
@@ -102,23 +112,9 @@
     - initial_setup
 
 - name: "Setup Rootless Systemd | Enable Lingering for Users"
-  become: yes
   shell:
     cmd: "loginctl enable-linger {{ gitlab_service_account }}"
   when: not lingering_status.stat.exists
   tags:
     - initial_setup
 
-- name: "Setup Rootless Systemd | Ensure Systemd User Service is Running"
-  become: yes
-  become_user: "{{ gitlab_service_account }}"
-  environment:
-    XDG_RUNTIME_DIR: "/run/user/{{ gitlab_service_account_uid }}"
-  systemd:
-    name: "container-{{ gitlab_server_name }}.service"
-    state: started
-    enabled: yes
-    daemon_reload: yes
-    scope: user
-  tags:
-    - initial_setup

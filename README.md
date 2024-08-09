@@ -51,12 +51,12 @@ sudo ln -s /opt/ansible-podman-gitlab-server-role/podman-gitlab-server-role /etc
     domain: '${DOMAIN}'
 
     # Podman Ports
-    gitlab_container_ssl_port: '2443:2443/tcp'
-    gitlab_gui_ssl_port: '2443'
+    gitlab_container_ssl_port: '8443:8443/tcp'
+    gitlab_gui_ssl_port: '8443'
     gitlab_container_ssh_port: '2222:22/tcp'
 
     # FirewallD Ports
-    gitlab_firewall_ssl_port: '2443/tcp'
+    gitlab_firewall_ssl_port: '8443/tcp'
     gitlab_firewall_ssh_port: '2222/tcp'
 
     # GitLab Container Specific Variables
