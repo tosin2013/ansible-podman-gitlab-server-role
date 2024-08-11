@@ -2,6 +2,7 @@
 # Username Variables
 gitlab_service_account: replace_with_service_account_name
 gitlab_service_account_uid: replace_with_service_account_UID
+specific_user: lab-user
 
 # Container Image Variables
 gitlab_server_image_name: docker.io/gitlab/gitlab-ce:latest
