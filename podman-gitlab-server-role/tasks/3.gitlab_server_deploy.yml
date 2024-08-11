@@ -42,6 +42,7 @@
     state: present
     hostname: "{{ gitlab_server_hostname }}{{ domain }}"
     restart_policy: "{{ gitlab_server_restart_policy }}"
+    shm_size: "2g"  # Increase the shared memory size to 1 GB
     volumes:
       - git_app_data:/etc/gitlab:Z
       - git_logs:/var/log/gitlab:Z
