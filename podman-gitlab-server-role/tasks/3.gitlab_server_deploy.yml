@@ -8,13 +8,6 @@
     - initial_setup
     - create_gitlab
 
-- name: "Deploy GitLab | Reload Systemd Daemon"
-  become_user: "{{ gitlab_service_account }}"
-  shell: "systemctl daemon-reload"
-  tags:
-    - initial_setup
-    - create_gitlab
-      
 - name: "Check GitLab SSL Directory"
   become_user: "{{ gitlab_service_account }}"
   stat:
@@ -148,15 +141,6 @@
     - initial_setup
     - create_gitlab
 
-- name: "Deploy GitLab | Create Systemd Service Files for GitLab Server"
-  become_user: "{{ gitlab_service_account }}"
-  shell: "podman generate systemd --name {{ gitlab_server_name }} --files --new"
-  args:
-    chdir: "/home/{{ gitlab_service_account }}/.config/systemd/user/"
-  tags:
-    - initial_setup
-    - create_gitlab
-
 - name: "Deploy GitLab | Wait for GitLab to be Up"
   uri:
     url: "https://{{ gitlab_server_hostname }}{{ domain }}:{{ gitlab_gui_ssl_port }}/users/sign_in"
@@ -168,6 +152,22 @@
   tags:
     - create_gitlab
 
+- name: "Deploy GitLab | Create Systemd Service Files for GitLab Server"
+  become_user: "{{ gitlab_service_account }}"
+  shell: "podman generate systemd --name {{ gitlab_server_name }} --files --new"
+  args:
+    chdir: "/home/{{ gitlab_service_account }}/.config/systemd/user/"
+  tags:
+    - initial_setup
+    - create_gitlab
+
+- name: "Deploy GitLab | Reload Systemd Daemon"
+  become_user: "{{ gitlab_service_account }}"
+  shell: "systemctl daemon-reload"
+  tags:
+    - initial_setup
+    - create_gitlab
+      
 - name: "Deploy GitLab | Save GitLab Admin Credentials to File"
   copy:
     dest: "/home/{{ specific_user }}/gitlab_admin_credentials.txt"
