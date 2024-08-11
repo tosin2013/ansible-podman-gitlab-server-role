@@ -50,7 +50,8 @@
     - git_config_data
   tags:
     - destroy_gitlab
-
+    - remove_gitlab
+    
 - name: "Stop and disable GitLab systemd service if it exists"
   become_user: "{{ gitlab_service_account }}"
   systemd:
@@ -60,7 +61,7 @@
   when: gitlab_service_status.status is defined and gitlab_service_status.status == "running"
   tags:
     - destroy_gitlab
-
+    - remove_gitlab
 - name: "Remove GitLab systemd service file"
   become_user: "{{ gitlab_service_account }}"
   file:
@@ -69,6 +70,7 @@
   when: gitlab_service_status.status is defined and gitlab_service_status.status == "running"
   tags:
     - destroy_gitlab
+    - remove_gitlab
 
 - name: "Reload systemd daemon after removing GitLab service"
   become_user: "{{ gitlab_service_account }}"
@@ -76,3 +78,4 @@
   when: gitlab_service_status.status is defined and gitlab_service_status.status == "running"
   tags:
     - destroy_gitlab
+    - remove_gitlab
