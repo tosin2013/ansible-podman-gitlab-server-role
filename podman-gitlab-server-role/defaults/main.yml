@@ -28,3 +28,6 @@ gitlab_firewall_ssh_port: '2222/tcp'
 # GitLab Container Specific Variables
 gitlab_server_restart_policy: always
 
+# SSL Certificate Generation Method
+letsencrypt_enabled: false
+

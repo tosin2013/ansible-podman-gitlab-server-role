@@ -82,3 +82,16 @@
   tags:
     - initial_setup
 
+- name: "Create SSL Certs | Generate Let's Encrypt Cert"
+  become: yes
+  acme_certificate:
+    account_key_src: "/etc/{{ gitlab_server_hostname }}/ssl/account.key"
+    csr: "/etc/{{ gitlab_server_hostname }}/ssl/{{ gitlab_server_hostname }}{{ domain }}.csr"
+    dest: "/etc/{{ gitlab_server_hostname }}/ssl/{{ gitlab_server_hostname }}{{ domain }}.crt"
+    challenge: http-01
+    acme_directory: "https://acme-v02.api.letsencrypt.org/directory"
+    terms_agreed: yes
+  when: letsencrypt_enabled
+  tags:
+    - initial_setup
+
