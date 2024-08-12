@@ -166,8 +166,32 @@
   shell: "systemctl daemon-reload"
   tags:
     - initial_setup
+    - create_gitlab     
+    
+- name: "Deploy GitLab | Wait for GitLab to be Up"
+  uri:
+    url: "https://{{ gitlab_server_hostname }}{{ domain }}:{{ gitlab_gui_ssl_port }}/users/sign_in"
+    validate_certs: no
+  register: gitlab_response
+  until: gitlab_response.status == 200
+  retries: 10
+  delay: 30
+  tags:
     - create_gitlab
-      
+
+- name: "Retrieve GitLab Admin Password"
+  become_user: "{{ gitlab_service_account }}"
+  command: "podman exec -it {{ gitlab_server_name }} grep 'Password:' /etc/gitlab/initial_root_password"
+  register: gitlab_password_result
+  tags:
+    - retrieve_password
+
+- name: "Set GitLab Admin Password Fact"
+  set_fact:
+    gitlab_admin_password: "{{ gitlab_password_result.stdout.split('Password: ')[1] | trim }}"
+  tags:
+    - set_password_fact
+
 - name: "Deploy GitLab | Save GitLab Admin Credentials to File"
   copy:
     dest: "/home/{{ specific_user }}/gitlab_admin_credentials.txt"
@@ -178,17 +202,6 @@
       Admin Password: {{ gitlab_admin_password }}
     owner: "{{ specific_user }}"
     mode: '0600'
-  tags:
-    - create_gitlab
-    
-- name: "Deploy GitLab | Wait for GitLab to be Up"
-  uri:
-    url: "https://{{ gitlab_server_hostname }}{{ domain }}:{{ gitlab_gui_ssl_port }}/users/sign_in"
-    validate_certs: no
-  register: gitlab_response
-  until: gitlab_response.status == 200
-  retries: 10
-  delay: 30
   tags:
     - create_gitlab
 
