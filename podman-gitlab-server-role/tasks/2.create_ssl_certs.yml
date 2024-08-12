@@ -81,48 +81,53 @@
     mode: '0755'
   when: letsencrypt_enabled | bool
   tags:
-    - letsencrypt_setup
+    - initial_setup
+
+- name: "Check if SSL certificate exists"
+  become: yes
+  stat:
+    path: "/etc/letsencrypt/live/{{ gitlab_server_hostname }}{{ domain }}/fullchain.pem"
+  register: cert_exists
+  when: letsencrypt_enabled | bool
+  tags:
+    - initial_setup
 
 - name: "Create SSL Certs | Run Certbot using Podman"
   become: yes
   shell: |
-    podman run --rm -it \
-          --env AWS_ACCESS_KEY_ID="{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}" \
-          --env AWS_SECRET_ACCESS_KEY="{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}" \
-          -v "/etc/letsencrypt:/etc/letsencrypt:Z" \
-          certbot/dns-route53 \
-          certonly --dns-route53 \
-          -d "{{ gitlab_server_hostname }}{{ domain }}" \
-          -d "*{{ gitlab_server_hostname }}{{ domain }}" \
-          --agree-tos \
-          --email "{{ your_email }}"
-  environment:
-    AWS_ACCESS_KEY_ID: "{{ aws_access_key }}"
-    AWS_SECRET_ACCESS_KEY: "{{ aws_secret_key }}"
-  when: letsencrypt_enabled | bool
+      podman run --rm \
+        --env AWS_ACCESS_KEY_ID="{{ aws_access_key }}" \
+        --env AWS_SECRET_ACCESS_KEY="{{ aws_secret_key }}" \
+        -v "/etc/letsencrypt:/etc/letsencrypt:Z" \
+        docker.io/certbot/dns-route53 \
+        certonly --dns-route53 \
+        -d "{{ gitlab_server_hostname }}{{ domain }}" \
+        --agree-tos \
+        --email "{{ your_email }}"
+  when: not cert_exists.stat.exists and letsencrypt_enabled | bool
   tags:
-    - letsencrypt_setup
+   - initial_setup
 
 - name: "Create SSL Certs | Copy Let's Encrypt Certs to {{ gitlab_service_account }} Home"
   become: yes
   copy:
     src: "/etc/letsencrypt/live/{{ gitlab_server_hostname }}{{ domain }}/fullchain.pem"
-    dest: "/etc/{{ gitlab_server_hostname }}/ssl/"
+    dest: "/etc/{{ gitlab_server_hostname }}/ssl/{{ gitlab_server_hostname }}{{ domain }}.crt"
     owner: "{{ gitlab_service_account }}"
     group: "{{ gitlab_service_account }}"
     remote_src: yes
   when: letsencrypt_enabled | bool
   tags:
-    - letsencrypt_setup
+    - initial_setup
 
 - name: "Create SSL Certs | Copy Let's Encrypt Private Key to {{ gitlab_service_account }} Home"
   become: yes
   copy:
     src: "/etc/letsencrypt/live/{{ gitlab_server_hostname }}{{ domain }}/privkey.pem"
-    dest: "/etc/{{ gitlab_server_hostname }}/ssl/"
+    dest: "/etc/{{ gitlab_server_hostname }}/ssl/{{ gitlab_server_hostname }}{{ domain }}.pem"
     owner: "{{ gitlab_service_account }}"
     group: "{{ gitlab_service_account }}"
     remote_src: yes
   when: letsencrypt_enabled | bool
   tags:
-    - letsencrypt_setup
+    - initial_setup

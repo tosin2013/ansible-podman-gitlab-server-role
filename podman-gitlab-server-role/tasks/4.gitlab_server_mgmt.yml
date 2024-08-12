@@ -62,6 +62,15 @@
     - destroy_gitlab
     - remove_gitlab
 
+- name: Remove SSL Certs directory for GitLab
+  become: yes
+  file:
+    path: "/etc/{{ gitlab_server_hostname }}/ssl/"
+    state: absent
+  tags:
+    - destroy_gitlab
+    - remove_gitlab
+    
 - name: "Reload systemd daemon after removing GitLab service"
   become_user: "{{ gitlab_service_account }}"
   shell: "systemctl daemon-reload"
