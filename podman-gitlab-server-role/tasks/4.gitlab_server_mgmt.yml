@@ -58,6 +58,7 @@
     name: "container-{{ gitlab_server_name }}.service"
     state: stopped
     enabled: no
+  when: gitlab_service_status.status is defined and gitlab_service_status.status == "running"
   tags:
     - destroy_gitlab
     - remove_gitlab
