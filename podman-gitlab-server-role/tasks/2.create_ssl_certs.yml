@@ -26,6 +26,7 @@
     name:
       - cryptography 
       - PyOpenSSL 
+      - boto3
     state: latest
   tags:
     - initial_setup
@@ -88,9 +89,12 @@
     account_key_src: "/etc/{{ gitlab_server_hostname }}/ssl/account.key"
     csr: "/etc/{{ gitlab_server_hostname }}/ssl/{{ gitlab_server_hostname }}{{ domain }}.csr"
     dest: "/etc/{{ gitlab_server_hostname }}/ssl/{{ gitlab_server_hostname }}{{ domain }}.crt"
-    challenge: http-01
+    challenge: dns-01
     acme_directory: "https://acme-v02.api.letsencrypt.org/directory"
     terms_agreed: yes
+    dns_provider: route53
+    route53_aws_access_key: "{{ lookup('env', 'AWS_ACCESS_KEY_ID') }}"
+    route53_aws_secret_key: "{{ lookup('env', 'AWS_SECRET_ACCESS_KEY') }}"
   when: letsencrypt_enabled
   tags:
     - initial_setup
