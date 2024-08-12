@@ -225,16 +225,6 @@
     - initial_setup
     - create_gitlab
 
-- name: "Deploy GitLab | Wait for {{ gitlab_server_name }} to start"
-  become_user: "{{ gitlab_service_account }}"
-  wait_for:
-    path: "/home/{{ gitlab_service_account }}/.config/systemd/user/container-{{ gitlab_server_name }}.service.status"
-    state: started
-    timeout: 60
-  tags:
-    - initial_setup
-    - create_gitlab
-
 - name: "Deploy GitLab | Start {{ gitlab_server_name }} with Systemd"
   become_user: "{{ gitlab_service_account }}"
   environment:
@@ -249,6 +239,16 @@
     - initial_setup
     - create_gitlab
 
+- name: "Deploy GitLab | Wait for {{ gitlab_server_name }} to start"
+  become_user: "{{ gitlab_service_account }}"
+  wait_for:
+    path: "/home/{{ gitlab_service_account }}/.config/systemd/user/container-{{ gitlab_server_name }}.service.status"
+    state: started
+    timeout: 60
+  tags:
+    - initial_setup
+    - create_gitlab
+    
 - name: "Deploy GitLab | Verify {{ gitlab_server_name }} Container Status"
   become_user: "{{ gitlab_service_account }}"
   podman_container_info:
