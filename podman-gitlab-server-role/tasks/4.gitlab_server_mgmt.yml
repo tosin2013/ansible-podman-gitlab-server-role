@@ -58,7 +58,6 @@
     name: "container-{{ gitlab_server_name }}.service"
     state: stopped
     enabled: no
-  when: gitlab_service_status.status is defined and gitlab_service_status.status == "running"
   tags:
     - destroy_gitlab
     - remove_gitlab
@@ -67,7 +66,6 @@
   file:
     path: "/home/{{ gitlab_service_account }}/.config/systemd/user/container-{{ gitlab_server_name }}.service"
     state: absent
-  when: gitlab_service_status.status is defined and gitlab_service_status.status == "running"
   tags:
     - destroy_gitlab
     - remove_gitlab
@@ -75,7 +73,6 @@
 - name: "Reload systemd daemon after removing GitLab service"
   become_user: "{{ gitlab_service_account }}"
   shell: "systemctl --user daemon-reload"
-  when: gitlab_service_status.status is defined and gitlab_service_status.status == "running"
   tags:
     - destroy_gitlab
     - remove_gitlab
