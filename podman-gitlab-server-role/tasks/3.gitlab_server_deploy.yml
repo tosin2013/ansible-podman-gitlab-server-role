@@ -164,6 +164,7 @@
 - name: "Deploy GitLab | Reload Systemd Daemon"
   become_user: "{{ gitlab_service_account }}"
   shell: "systemctl daemon-reload"
+  ignore_errors: true
   tags:
     - initial_setup
     - create_gitlab     

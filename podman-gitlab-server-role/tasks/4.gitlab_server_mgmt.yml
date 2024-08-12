@@ -65,6 +65,7 @@
 - name: "Reload systemd daemon after removing GitLab service"
   become_user: "{{ gitlab_service_account }}"
   shell: "systemctl daemon-reload"
+  ignore_errors: true
   tags:
     - destroy_gitlab
     - remove_gitlab
