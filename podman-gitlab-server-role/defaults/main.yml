@@ -15,6 +15,7 @@ gitlab_server_hostname: gitlab
 
 # Domain
 domain: '.example.com'
+your_email: 'my-email@example.com'
 
 # Podman Ports
 gitlab_container_ssl_port: '443:443'
@@ -31,3 +32,6 @@ gitlab_server_restart_policy: always
 # SSL Certificate Generation Method
 letsencrypt_enabled: false
 
+# Should be a secret 
+aws_access_key: 'replace_with_AWS_access_key'
+aws_secret_key: 'replace_with_AWS_secret_key'
