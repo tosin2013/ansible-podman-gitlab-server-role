@@ -103,7 +103,8 @@
         certonly --dns-route53 \
         -d "{{ gitlab_server_hostname }}{{ domain }}" \
         --agree-tos \
-        --email "{{ your_email }}"
+        --email "{{ your_email }}" \
+        --non-interactive
   when: not cert_exists.stat.exists and letsencrypt_enabled | bool
   tags:
    - initial_setup

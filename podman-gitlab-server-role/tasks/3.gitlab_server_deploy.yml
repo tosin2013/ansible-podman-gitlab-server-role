@@ -115,8 +115,8 @@
   become_user: "{{ gitlab_service_account }}"
   shell: "podman cp {{ item }}"
   with_items:
-    - "/home/{{ gitlab_service_account }}/{{ gitlab_server_hostname }}{{ domain }}.pem {{ gitlab_server_name }}:/etc/gitlab/ssl"
-    - "/home/{{ gitlab_service_account }}/{{ gitlab_server_hostname }}{{ domain }}.crt {{ gitlab_server_name }}:/etc/gitlab/ssl"
+    - "/etc/{{ gitlab_server_hostname }}/ssl/{{ gitlab_server_hostname }}{{ domain }}.pem {{ gitlab_server_name }}:/etc/gitlab/ssl"
+    - "/etc/{{ gitlab_server_hostname }}/ssl/{{ gitlab_server_hostname }}{{ domain }}.crt {{ gitlab_server_name }}:/etc/gitlab/ssl"
   when: not gitlab_ssl_dir_status.stat.exists | bool
   tags:
     - initial_setup
