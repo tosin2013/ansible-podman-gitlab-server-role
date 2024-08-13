@@ -8,7 +8,7 @@
     env:
       POSTGRES_DB: "gitlabhq_production"
       POSTGRES_USER: "gitlab"
-      POSTGRES_PASSWORD: "{{ postgres_password }}"
+      POSTGRES_PASSWORD: "{{ gitlab_postgres_password }}"
     volumes:
       - "/srv/postgresql/data:/var/lib/postgresql/data:Z"
     ports:
@@ -76,7 +76,7 @@
         gitlab_rails['db_host'] = 'localhost'
         gitlab_rails['db_port'] = '5432'
         gitlab_rails['db_username'] = 'gitlab'
-        gitlab_rails['db_password'] = '{{ postgres_password }}'
+        gitlab_rails['db_password'] = '{{ gitlab_postgres_password }}'
         gitlab_rails['db_database'] = 'gitlabhq_production'
   tags:
     - initial_setup
