@@ -236,6 +236,7 @@
     path: "/home/{{ gitlab_service_account }}/.config/systemd/user/container-{{ gitlab_server_name }}.service.status"
     state: started
     timeout: 60
+  ignore_errors: true
   tags:
     - initial_setup
     - create_gitlab
