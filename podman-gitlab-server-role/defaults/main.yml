@@ -38,4 +38,4 @@ aws_access_key: 'replace_with_AWS_access_key'
 aws_secret_key: 'replace_with_AWS_secret_key'
 
 # postgress password 
-gitlab_postgres_password: '0FlgeTVSi9L8'
+gitlab_postgres_password: 'replace_with_postgres_password'
