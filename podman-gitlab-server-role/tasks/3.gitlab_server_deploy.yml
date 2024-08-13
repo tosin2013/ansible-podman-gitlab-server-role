@@ -1,4 +1,22 @@
 ---
+- name: "Setup PostgreSQL Container"
+  become_user: "{{ gitlab_service_account }}"
+  podman_container:
+    name: "postgres"
+    image: "postgres:latest"
+    state: present
+    env:
+      POSTGRES_DB: "gitlabhq_production"
+      POSTGRES_USER: "gitlab"
+      POSTGRES_PASSWORD: "{{ postgres_password }}"
+    volumes:
+      - "/srv/postgresql/data:/var/lib/postgresql/data:Z"
+    ports:
+      - "5432:5432"
+  tags:
+    - postgresql
+    - initial_setup
+
 - name: "Check for GitLab Server Container Service File"
   become_user: "{{ gitlab_service_account }}"
   stat:
@@ -34,26 +52,35 @@
   shell: "firewall-cmd --complete-reload"
   when: firewall_status.results | selectattr('changed') | list | length > 0
 
-- name: "Deploy GitLab | Create {{ gitlab_server_name }} Container"
+- name: "Create GitLab CE Container with External PostgreSQL"
   become_user: "{{ gitlab_service_account }}"
   podman_container:
     name: "{{ gitlab_server_name }}"
     image: "{{ gitlab_server_image_name }}"
     state: present
     hostname: "{{ gitlab_server_hostname }}{{ domain }}"
-    restart_policy: "{{ gitlab_server_restart_policy }}"
-    shm_size: "2g"  # Increase the shared memory size to 1 GB
+    restart_policy: "always"
+    shm_size: "2g"
     volumes:
-      - git_app_data:/etc/gitlab:Z
-      - git_logs:/var/log/gitlab:Z
-      - git_config_data:/var/opt/gitlab:Z
+      - "git_app_data:/etc/gitlab:Z"
+      - "git_logs:/var/log/gitlab:Z"
+      - "git_config_data:/var/opt/gitlab:Z"
     ports:
       - "{{ gitlab_container_ssl_port }}"
       - "{{ gitlab_container_ssh_port }}"
+    env:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'https://{{ gitlab_server_hostname }}{{ domain }}:{{ gitlab_gui_ssl_port }}'
+        gitlab_rails['db_adapter'] = 'postgresql'
+        gitlab_rails['db_encoding'] = 'unicode'
+        gitlab_rails['db_host'] = 'localhost'
+        gitlab_rails['db_port'] = '5432'
+        gitlab_rails['db_username'] = 'gitlab'
+        gitlab_rails['db_password'] = '{{ postgres_password }}'
+        gitlab_rails['db_database'] = 'gitlabhq_production'
   tags:
     - initial_setup
     - create_gitlab
-
 
 - name: "Check if GitLab container exists"
   become_user: "{{ gitlab_service_account }}"
@@ -237,25 +264,6 @@
     state: started
     timeout: 60
   ignore_errors: true
-  tags:
-    - initial_setup
-    - create_gitlab
-    
-- name: "Deploy GitLab | Verify {{ gitlab_server_name }} Container Status"
-  become_user: "{{ gitlab_service_account }}"
-  podman_container_info:
-    name: "{{ gitlab_server_name }}"
-  register: gitlab_container_status
-  tags:
-    - initial_setup
-    - create_gitlab
-
-- name: "Deploy GitLab | Ensure {{ gitlab_server_name }} Container is Running"
-  become_user: "{{ gitlab_service_account }}"
-  podman_container:
-    name: "{{ gitlab_server_name }}"
-    state: started
-  when: gitlab_container_status.containers | length == 0 or gitlab_container_status.containers[0].State != 'running'
   tags:
     - initial_setup
     - create_gitlab

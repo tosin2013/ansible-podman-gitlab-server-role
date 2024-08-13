@@ -1,6 +1,7 @@
 ---
 # Username Variables
 gitlab_service_account: replace_with_service_account_name
+postgres_service_account: replace_with_service_account_name
 gitlab_service_account_uid: replace_with_service_account_UID
 specific_user: lab-user
 
@@ -35,3 +36,6 @@ letsencrypt_enabled: false
 # Should be a secret 
 aws_access_key: 'replace_with_AWS_access_key'
 aws_secret_key: 'replace_with_AWS_secret_key'
+
+# postgress password 
+gitlab_postgres_password: 'replace_with_postgres_password'

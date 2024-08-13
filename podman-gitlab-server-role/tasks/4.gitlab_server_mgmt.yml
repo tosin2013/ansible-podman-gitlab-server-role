@@ -78,3 +78,42 @@
   tags:
     - destroy_gitlab
     - remove_gitlab
+
+
+- name: "PostgreSQL Management | Stop PostgreSQL Container"
+  become: yes
+  become_user: "{{ postgres_service_account }}"
+  podman_container:
+    name: "postgres"
+    state: stopped
+  tags:
+    - destroy_gitlab
+    - remove_gitlab
+
+- name: "PostgreSQL Management | Remove PostgreSQL Container"
+  become: yes
+  become_user: "{{ postgres_service_account }}"
+  podman_container:
+    name: "postgres"
+    state: absent
+  tags:
+    - destroy_gitlab
+    - remove_gitlab
+
+- name: "PostgreSQL Management | Remove PostgreSQL Data Volume"
+  become: yes
+  become_user: "{{ postgres_service_account }}"
+  podman_volume:
+    name: "/srv/postgresql/data"
+    state: absent
+  tags:
+    - destroy_gitlab
+    - remove_gitlab
+
+- name: "PostgreSQL Management | Reload systemd daemon after removing PostgreSQL service"
+  become_user: "{{ postgres_service_account }}"
+  shell: "systemctl daemon-reload"
+  ignore_errors: true
+  tags:
+    - destroy_gitlab
+    - remove_gitlab
