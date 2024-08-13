@@ -147,7 +147,7 @@
     validate_certs: no
   register: gitlab_response
   until: gitlab_response.status == 200
-  retries: 10
+  retries: 35
   delay: 30
   tags:
     - create_gitlab
@@ -175,8 +175,8 @@
     validate_certs: no
   register: gitlab_response
   until: gitlab_response.status == 200
-  retries: 10
-  delay: 30
+  retries: 75
+  delay: 10
   tags:
     - create_gitlab
 
@@ -215,15 +215,6 @@
       Admin Password: {{ gitlab_admin_password }}
   tags:
     - print_credentials
-
-- name: "Deploy GitLab | Stop {{ gitlab_server_name }}"
-  become_user: "{{ gitlab_service_account }}"
-  podman_container:
-    name: "{{ gitlab_server_name }}"
-    state: stopped
-  tags:
-    - initial_setup
-    - create_gitlab
 
 - name: "Deploy GitLab | Start {{ gitlab_server_name }} with Systemd"
   become_user: "{{ gitlab_service_account }}"
@@ -275,8 +266,8 @@
     state: started
   register: gitlab_container_status
   until: gitlab_container_status.state.running
-  retries: 10
-  delay: 30
+  retries: 75
+  delay: 10
   tags:
     - initial_setup
     - create_gitlab
