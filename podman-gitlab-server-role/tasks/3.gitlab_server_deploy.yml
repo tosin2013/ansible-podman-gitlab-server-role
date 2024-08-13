@@ -3,7 +3,7 @@
   become_user: "{{ gitlab_service_account }}"
   podman_container:
     name: "postgres"
-    image: "postgres:latest"
+    image: "docker.io/library/postgres:latest"
     state: present
     env:
       POSTGRES_DB: "gitlabhq_production"
