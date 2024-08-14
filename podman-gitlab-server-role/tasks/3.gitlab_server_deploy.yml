@@ -247,7 +247,7 @@
       gitlab_rails['db_encoding'] = 'unicode'
       gitlab_rails['db_host'] = '{{ postgres_ip }}'
       gitlab_rails['db_port'] = '5432'
-      gitlab_rails['db_username'] = 'gitlab'
+      gitlab_rails['db_username'] = 'postgres'
       gitlab_rails['db_password'] = '{{ gitlab_postgres_password }}'
       gitlab_rails['db_database'] = 'gitlabhq_production'
   when: gitlab_container_exists | bool
