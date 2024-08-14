@@ -194,13 +194,6 @@
     env:
       GITLAB_OMNIBUS_CONFIG: |
         external_url 'https://{{ gitlab_server_hostname }}{{ domain }}:{{ gitlab_gui_ssl_port }}'
-        gitlab_rails['db_adapter'] = 'postgresql'
-        gitlab_rails['db_encoding'] = 'unicode'
-        gitlab_rails['db_host'] = '{{ postgres_ip }}'
-        gitlab_rails['db_port'] = '5432'
-        gitlab_rails['db_username'] = 'gitlab'
-        gitlab_rails['db_password'] = '{{ gitlab_postgres_password }}'
-        gitlab_rails['db_database'] = 'gitlabhq_production'
   tags:
     - initial_setup
     - create_gitlab
@@ -239,7 +232,7 @@
     - initial_setup
     - create_gitlab
     
-- name: "Deploy GitLab | Modify gitlab.rb to Support FQDN"
+- name: "Deploy GitLab | Modify gitlab.rb to Support FQDN and External PostgreSQL"
   become_user: "{{ gitlab_service_account }}"
   blockinfile:
     path: "/home/{{ gitlab_service_account }}/.local/share/containers/storage/volumes/git_app_data/_data/gitlab.rb"
@@ -248,6 +241,15 @@
       external_url "https://{{ gitlab_server_hostname }}{{ domain }}:{{ gitlab_gui_ssl_port }}/"
       nginx['ssl_certificate'] = "/etc/gitlab/ssl/{{ gitlab_server_hostname }}{{ domain }}.crt"
       nginx['ssl_certificate_key'] = "/etc/gitlab/ssl/{{ gitlab_server_hostname }}{{ domain }}.pem"
+
+      # External PostgreSQL Configuration
+      gitlab_rails['db_adapter'] = 'postgresql'
+      gitlab_rails['db_encoding'] = 'unicode'
+      gitlab_rails['db_host'] = '{{ postgres_ip }}'
+      gitlab_rails['db_port'] = '5432'
+      gitlab_rails['db_username'] = 'gitlab'
+      gitlab_rails['db_password'] = '{{ gitlab_postgres_password }}'
+      gitlab_rails['db_database'] = 'gitlabhq_production'
   when: gitlab_container_exists | bool
   tags:
     - initial_setup
