@@ -1,21 +1,119 @@
 ---
+- name: "Create a podman network for GitLab and PostgreSQL"
+  podman_network:
+    name: gitlab_network
+    state: present
+  become_user: "{{ gitlab_service_account }}"
+  tags:
+    - initial_setup
+    - create_gitlab
+
 - name: "Setup PostgreSQL Container"
   become_user: "{{ gitlab_service_account }}"
   podman_container:
     name: "postgres"
     image: "docker.io/library/postgres:latest"
-    state: present
+    state: started
+    network: gitlab_network
+    privileged: yes
     env:
-      POSTGRES_DB: "gitlabhq_production"
-      POSTGRES_USER: "gitlab"
+      POSTGRES_USER: "postgres"
       POSTGRES_PASSWORD: "{{ gitlab_postgres_password }}"
     volumes:
-      - "/srv/postgresql/data:/var/lib/postgresql/data:Z"
+      - "postgresql:/var/lib/postgresql/data:Z"
     ports:
       - "5432:5432"
+  register: postgres_container_result
+  failed_when: 
+    - postgres_container_result.failed
+    - "'Error: unable to start container' in postgres_container_result.msg"
   tags:
-    - postgresql
     - initial_setup
+    - create_gitlab
+
+- name: "Display PostgreSQL container error"
+  debug:
+    msg: "PostgreSQL container failed to start. Error: {{ postgres_container_result.msg }}"
+  when: postgres_container_result.failed
+  tags:
+    - initial_setup
+    - create_gitlab
+
+- name: "Check if PostgreSQL container exists and is running"
+  become_user: "{{ gitlab_service_account }}"
+  podman_container_info:
+    name: "postgres"
+  register: postgres_container_info
+  tags:
+    - initial_setup
+    - create_gitlab
+
+- name: Wait for PostgreSQL to start
+  ansible.builtin.wait_for:
+    host: 127.0.0.1
+    port: 5432
+    delay: 5
+    timeout: 30
+  tags:
+    - initial_setup
+    - create_gitlab
+
+
+- name: "Set fact for postgres_container_status"
+  set_fact:
+    postgres_container_running: "{{ postgres_container_info.containers | length > 0 and postgres_container_info.containers[0].State.Running }}"
+  tags:
+    - initial_setup
+    - create_gitlab
+
+- name: "Handle PostgreSQL Container Status"
+  fail:
+    msg: "PostgreSQL container is not running. Please check the container logs for more information."
+  when: not postgres_container_running
+  tags:
+    - initial_setup
+    - create_gitlab
+
+- name: "Optimize PostgreSQL for GitLab"
+  become_user: "{{ gitlab_service_account }}"
+  shell: >
+    podman exec postgres bash -c "psql -U postgres -c \"ALTER SYSTEM SET shared_buffers = '256MB';\"" && \
+    podman exec postgres bash -c "psql -U postgres -c \"ALTER SYSTEM SET work_mem = '8MB';\"" && \
+    podman exec postgres bash -c "psql -U postgres -c \"ALTER SYSTEM SET maintenance_work_mem = '64MB';\"" && \
+    podman exec postgres bash -c "psql -U postgres -c \"ALTER SYSTEM SET effective_cache_size = '1GB';\"" && \
+    podman exec postgres bash -c "psql -U postgres -c \"ALTER SYSTEM SET wal_buffers = '16MB';\"" && \
+    podman exec postgres bash -c "psql -U postgres -c \"ALTER SYSTEM SET checkpoint_completion_target = 0.9;\"" && \
+    podman exec postgres bash -c "psql -U postgres -c \"ALTER SYSTEM SET random_page_cost = 1.1;\"" && \
+    podman exec postgres bash -c "psql -U postgres -c \"ALTER SYSTEM SET effective_io_concurrency = 200;\"" && \
+    podman exec postgres bash -c "psql -U postgres -c \"ALTER SYSTEM SET autovacuum = on;\"" && \
+    podman exec postgres bash -c "psql -U postgres -c \"ALTER SYSTEM SET max_connections = 300;\""
+  tags:
+    - initial_setup
+    - create_gitlab
+
+- name: "Reload PostgreSQL configuration"
+  become_user: "{{ gitlab_service_account }}"
+  command: podman exec -u postgres postgres pg_ctl reload -D /var/lib/postgresql/data
+  tags:
+    - initial_setup
+    - create_gitlab
+
+- name: Sleep for 25 seconds
+  pause:
+    seconds: 25
+  tags:
+    - initial_setup
+    - create_gitlab
+
+- name: "Create GitLab Production Database"
+  become_user: "{{ gitlab_service_account }}"
+  command: podman exec -u postgres postgres psql -c "CREATE DATABASE gitlabhq_production;"
+  register: create_db_result
+  failed_when: 
+    - create_db_result.rc != 0
+  tags:
+    - initial_setup
+    - create_gitlab
 
 - name: "Check for GitLab Server Container Service File"
   become_user: "{{ gitlab_service_account }}"
@@ -39,7 +137,7 @@
   firewalld:
     port: "{{ item }}"
     state: enabled
-    permanent: yes
+    permanent: true
   with_items:
     - "{{ gitlab_firewall_ssl_port }}"
     - "{{ gitlab_firewall_ssh_port }}"
@@ -52,6 +150,15 @@
   shell: "firewall-cmd --complete-reload"
   when: firewall_status.results | selectattr('changed') | list | length > 0
 
+- name: "Get PostgreSQL container IP"
+  become_user: "{{ gitlab_service_account }}"
+  command: podman inspect -f '{% raw %}{{.NetworkSettings.Networks.gitlab_network.IPAddress}}{% endraw %}' postgres
+  register: postgres_ip_result
+
+- name: "Set PostgreSQL IP fact"
+  set_fact:
+    postgres_ip: "{{ postgres_ip_result.stdout }}"
+
 - name: "Create GitLab CE Container with External PostgreSQL"
   become_user: "{{ gitlab_service_account }}"
   podman_container:
@@ -59,6 +166,8 @@
     image: "{{ gitlab_server_image_name }}"
     state: present
     hostname: "{{ gitlab_server_hostname }}{{ domain }}"
+    network: gitlab_network
+    network_mode: "slirp4netns:allow_host_loopback=true"
     restart_policy: "always"
     shm_size: "2g"
     volumes:
@@ -73,7 +182,7 @@
         external_url 'https://{{ gitlab_server_hostname }}{{ domain }}:{{ gitlab_gui_ssl_port }}'
         gitlab_rails['db_adapter'] = 'postgresql'
         gitlab_rails['db_encoding'] = 'unicode'
-        gitlab_rails['db_host'] = 'localhost'
+        gitlab_rails['db_host'] = '{{ postgres_ip }}'
         gitlab_rails['db_port'] = '5432'
         gitlab_rails['db_username'] = 'gitlab'
         gitlab_rails['db_password'] = '{{ gitlab_postgres_password }}'
@@ -250,8 +359,8 @@
   systemd:
     name: "container-{{ gitlab_server_name }}.service"
     state: started
-    enabled: yes
-    daemon_reload: yes
+    enabled: true
+    daemon_reload: true
     scope: user
   tags:
     - initial_setup

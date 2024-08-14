@@ -22,6 +22,7 @@
     state: stopped
     daemon_reload: yes
     scope: user
+  ignore_errors: true
   tags:
     - stop_gitlab
     - remove_gitlab
@@ -33,6 +34,7 @@
   podman_container:
     name: "{{ gitlab_server_name }}"
     state: absent
+  ignore_errors: true
   tags:
     - remove_gitlab
     - destroy_gitlab
@@ -44,6 +46,7 @@
   podman_volume:
     name: "{{ item }}"
     state: absent
+  ignore_errors: true
   with_items:
     - git_app_data
     - git_logs
@@ -67,6 +70,7 @@
   file:
     path: "/etc/{{ gitlab_server_hostname }}/ssl/"
     state: absent
+  ignore_errors: true
   tags:
     - destroy_gitlab
     - remove_gitlab
@@ -86,6 +90,7 @@
   podman_container:
     name: "postgres"
     state: stopped
+  ignore_errors: true
   tags:
     - destroy_gitlab
     - remove_gitlab
@@ -96,6 +101,7 @@
   podman_container:
     name: "postgres"
     state: absent
+  ignore_errors: true
   tags:
     - destroy_gitlab
     - remove_gitlab
@@ -106,6 +112,7 @@
   podman_volume:
     name: "/srv/postgresql/data"
     state: absent
+  ignore_errors: true
   tags:
     - destroy_gitlab
     - remove_gitlab
@@ -117,3 +124,22 @@
   tags:
     - destroy_gitlab
     - remove_gitlab
+
+- name: "PostgreSQL Management | Remove PostgreSQL volume"
+  become_user: "{{ postgres_service_account }}"
+  shell: "podman volume rm postgresql"
+  ignore_errors: true
+  tags:
+    - destroy_gitlab
+    - remove_gitlab
+
+- name: "Destroy GitLab network"
+  podman_network:
+    name: gitlab_network
+    state: absent
+  become_user: "{{ gitlab_service_account }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ gitlab_service_account_uid }}"
+  tags:
+    - remove_gitlab
+    - destroy_gitlab
