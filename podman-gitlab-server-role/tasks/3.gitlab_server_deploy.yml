@@ -58,7 +58,6 @@
     - initial_setup
     - create_gitlab
 
-
 - name: "Set fact for postgres_container_status"
   set_fact:
     postgres_container_running: "{{ postgres_container_info.containers | length > 0 and postgres_container_info.containers[0].State.Running }}"
@@ -238,18 +237,33 @@
     path: "/home/{{ gitlab_service_account }}/.local/share/containers/storage/volumes/git_app_data/_data/gitlab.rb"
     block: |
       # Add Support for SSL 
-      external_url "https://{{ gitlab_server_hostname }}{{ domain }}:{{ gitlab_gui_ssl_port }}/"
-      nginx['ssl_certificate'] = "/etc/gitlab/ssl/{{ gitlab_server_hostname }}{{ domain }}.crt"
-      nginx['ssl_certificate_key'] = "/etc/gitlab/ssl/{{ gitlab_server_hostname }}{{ domain }}.pem"
+      external_url "https://{{ gitlab_server_hostname }}{{ domain }}:{{ gitlab_gui_ssl_port }}"
+      letsencrypt['contact_emails'] = ['{{ your_email }}'] # Optional
+      registry_external_url "https://{{ gitlab_server_hostname }}{{ domain }}"
+      
+      # nginx['ssl_certificate'] = "/etc/gitlab/ssl/{{ gitlab_server_hostname }}{{ domain }}.crt"
+      # nginx['ssl_certificate_key'] = "/etc/gitlab/ssl/{{ gitlab_server_hostname }}{{ domain }}.pem"
+
+      # Disable the built-in Postgres
+      postgresql['enable'] = false
 
       # External PostgreSQL Configuration
       gitlab_rails['db_adapter'] = 'postgresql'
-      gitlab_rails['db_encoding'] = 'unicode'
+      gitlab_rails['db_encoding'] = 'utf8'
       gitlab_rails['db_host'] = '{{ postgres_ip }}'
       gitlab_rails['db_port'] = '5432'
       gitlab_rails['db_username'] = 'postgres'
       gitlab_rails['db_password'] = '{{ gitlab_postgres_password }}'
-      gitlab_rails['db_database'] = 'gitlabhq_production'
+
+      # Renew every 7th day of the month at 12:30
+      letsencrypt['auto_renew_hour'] = "12"
+      letsencrypt['auto_renew_minute'] = "30"
+      letsencrypt['auto_renew_day_of_month'] = "*/7"
+
+      crond['flags'] = {
+        'log.json' = true,
+        'server.bind' = ':8040'
+      }
   when: gitlab_container_exists | bool
   tags:
     - initial_setup
@@ -260,8 +274,7 @@
   shell: "podman exec -it {{ gitlab_server_name }} mkdir /etc/gitlab/ssl/"
   when: not gitlab_ssl_dir_status.stat.exists | bool
   tags:
-    - initial_setup
-    - create_gitlab
+    - custom_cert
 
 - name: "Deploy GitLab | Copy SSL Cert to GitLab SSL Directory"
   become_user: "{{ gitlab_service_account }}"
@@ -271,8 +284,7 @@
     - "/etc/{{ gitlab_server_hostname }}/ssl/{{ gitlab_server_hostname }}{{ domain }}.crt {{ gitlab_server_name }}:/etc/gitlab/ssl"
   when: not gitlab_ssl_dir_status.stat.exists | bool
   tags:
-    - initial_setup
-    - create_gitlab
+    - custom_cert
 
 - name: "Deploy GitLab | Reconfigure GitLab after changes"
   become_user: "{{ gitlab_service_account }}"

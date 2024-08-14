@@ -9,7 +9,7 @@
       - python3-libselinux
     state: present
   tags:
-    - initial_setup
+    - custom_cert
 
 - name: "Create SSL Certs | Update Pip"
   become: yes
@@ -18,7 +18,7 @@
       - pip
     state: latest
   tags:
-    - initial_setup
+    - custom_cert
 
 - name: "Create SSL Certs | Pip Install Dependencies"
   become: yes
@@ -29,7 +29,7 @@
       - boto3
     state: latest
   tags:
-    - initial_setup
+    - custom_cert
 
 - name: "Create SSL Certs | Create SSL Directory"
   become: yes
@@ -38,7 +38,7 @@
     state: directory
     mode: '0775'
   tags:
-    - initial_setup
+    - custom_cert
 
 - name: "Create SSL Certs | Generate Private Key"
   become: yes
@@ -47,7 +47,7 @@
     select_crypto_backend: cryptography
   when: not letsencrypt_enabled | bool
   tags:
-    - initial_setup
+    - custom_cert
 
 - name: "Create SSL Certs | Generate SSL csr"
   become: yes
@@ -58,7 +58,7 @@
     common_name: "{{ gitlab_server_hostname }}{{ domain }}"
   when: not letsencrypt_enabled | bool
   tags:
-    - initial_setup
+    - custom_cert
 
 - name: "Create SSL Certs | Generate Self Signed Cert"
   become: yes
@@ -70,65 +70,5 @@
     provider: selfsigned
   when: not letsencrypt_enabled | bool
   tags:
-    - initial_setup
+    - custom_cert
 
-
-- name: "Create SSL Certs | Create Let's Encrypt Directory"
-  become: yes
-  file:
-    path: "/etc/letsencrypt"
-    state: directory
-    mode: '0755'
-  when: letsencrypt_enabled | bool
-  tags:
-    - initial_setup
-
-- name: "Check if SSL certificate exists"
-  become: yes
-  stat:
-    path: "/etc/letsencrypt/live/{{ gitlab_server_hostname }}{{ domain }}/fullchain.pem"
-  register: cert_exists
-  when: letsencrypt_enabled | bool
-  tags:
-    - initial_setup
-
-- name: "Create SSL Certs | Run Certbot using Podman"
-  become: yes
-  shell: |
-      podman run --rm \
-        --env AWS_ACCESS_KEY_ID="{{ aws_access_key }}" \
-        --env AWS_SECRET_ACCESS_KEY="{{ aws_secret_key }}" \
-        -v "/etc/letsencrypt:/etc/letsencrypt:Z" \
-        docker.io/certbot/dns-route53 \
-        certonly --dns-route53 \
-        -d "{{ gitlab_server_hostname }}{{ domain }}" \
-        --agree-tos \
-        --email "{{ your_email }}" \
-        --non-interactive
-  when: not cert_exists.stat.exists and letsencrypt_enabled | bool
-  tags:
-   - initial_setup
-
-- name: "Create SSL Certs | Copy Let's Encrypt Certs to {{ gitlab_service_account }} Home"
-  become: yes
-  copy:
-    src: "/etc/letsencrypt/live/{{ gitlab_server_hostname }}{{ domain }}/fullchain.pem"
-    dest: "/etc/{{ gitlab_server_hostname }}/ssl/{{ gitlab_server_hostname }}{{ domain }}.crt"
-    owner: "{{ gitlab_service_account }}"
-    group: "{{ gitlab_service_account }}"
-    remote_src: yes
-  when: letsencrypt_enabled | bool
-  tags:
-    - initial_setup
-
-- name: "Create SSL Certs | Copy Let's Encrypt Private Key to {{ gitlab_service_account }} Home"
-  become: yes
-  copy:
-    src: "/etc/letsencrypt/live/{{ gitlab_server_hostname }}{{ domain }}/privkey.pem"
-    dest: "/etc/{{ gitlab_server_hostname }}/ssl/{{ gitlab_server_hostname }}{{ domain }}.pem"
-    owner: "{{ gitlab_service_account }}"
-    group: "{{ gitlab_service_account }}"
-    remote_src: yes
-  when: letsencrypt_enabled | bool
-  tags:
-    - initial_setup

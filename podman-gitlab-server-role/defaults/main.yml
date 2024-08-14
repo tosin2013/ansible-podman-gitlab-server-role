@@ -30,8 +30,8 @@ gitlab_firewall_ssh_port: '2222/tcp'
 # GitLab Container Specific Variables
 gitlab_server_restart_policy: always
 
-# SSL Certificate Generation Method
-letsencrypt_enabled: false
+# Use Custom SSL Certs
+custom_cert: false
 
 # Should be a secret 
 aws_access_key: 'replace_with_AWS_access_key'
