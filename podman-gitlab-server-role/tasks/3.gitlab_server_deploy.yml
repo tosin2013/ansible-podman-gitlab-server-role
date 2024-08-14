@@ -98,9 +98,23 @@
     - initial_setup
     - create_gitlab
 
-- name: Sleep for 25 seconds
+- name: "Stop PostgreSQL Container"
+  become_user: "{{ gitlab_service_account }}"
+  shell: "podman stop postgres"
+  tags:
+    - initial_setup
+    - create_gitlab
+
+- name: "Start PostgreSQL Container"
+  become_user: "{{ gitlab_service_account }}"
+  shell: "podman start postgres"
+  tags:
+    - initial_setup
+    - create_gitlab
+
+- name: Sleep for 30 seconds
   pause:
-    seconds: 25
+    seconds: 30
   tags:
     - initial_setup
     - create_gitlab
