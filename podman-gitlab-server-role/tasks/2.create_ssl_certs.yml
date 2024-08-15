@@ -38,7 +38,7 @@
     state: directory
     mode: '0775'
   tags:
-    - custom_cert
+    - initial_setup
 
 - name: "Create SSL Certs | Generate Private Key"
   become: yes
@@ -72,3 +72,53 @@
   tags:
     - custom_cert
 
+- name: "Check if SSL certificate exists"
+  become: yes
+  stat:
+    path: "/etc/letsencrypt/live/{{ gitlab_server_hostname }}{{ domain }}/fullchain.pem"
+  register: cert_exists
+  when: letsencrypt_enabled | bool
+  tags:
+    - initial_setup
+
+- name: "Create SSL Certs | Run Certbot using Podman"
+  become: yes
+  shell: |
+      podman run --rm \
+        --env AWS_ACCESS_KEY_ID="{{ aws_access_key }}" \
+        --env AWS_SECRET_ACCESS_KEY="{{ aws_secret_key }}" \
+        -v "/etc/letsencrypt:/etc/letsencrypt:Z" \
+        docker.io/certbot/dns-route53 \
+        certonly --dns-route53 \
+        -d "{{ gitlab_server_hostname }}{{ domain }}" \
+        --agree-tos \
+        --rsa-key-size 2048 \
+        --email "{{ your_email }}" \
+        --non-interactive
+  when: not cert_exists.stat.exists and letsencrypt_enabled | bool
+  tags:
+   - initial_setup
+
+- name: "Create SSL Certs | Copy Let's Encrypt Certs to {{ gitlab_service_account }} Home"
+  become: yes
+  copy:
+    src: "/etc/letsencrypt/live/{{ gitlab_server_hostname }}{{ domain }}/fullchain.pem"
+    dest: "/etc/{{ gitlab_server_hostname }}/ssl/{{ gitlab_server_hostname }}{{ domain }}.crt"
+    owner: "{{ gitlab_service_account }}"
+    group: "{{ gitlab_service_account }}"
+    remote_src: yes
+  when: letsencrypt_enabled | bool
+  tags:
+    - initial_setup
+
+- name: "Create SSL Certs | Copy Let's Encrypt Private Key to {{ gitlab_service_account }} Home"
+  become: yes
+  copy:
+    src: "/etc/letsencrypt/live/{{ gitlab_server_hostname }}{{ domain }}/privkey.pem"
+    dest: "/etc/{{ gitlab_server_hostname }}/ssl/{{ gitlab_server_hostname }}{{ domain }}.pem"
+    owner: "{{ gitlab_service_account }}"
+    group: "{{ gitlab_service_account }}"
+    remote_src: yes
+  when: letsencrypt_enabled | bool
+  tags:
+    - initial_setup
