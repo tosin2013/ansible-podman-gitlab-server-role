@@ -163,15 +163,31 @@
 - name: "Deploy GitLab | Reload FirewallD"
   shell: "firewall-cmd --complete-reload"
   when: firewall_status.results | selectattr('changed') | list | length > 0
+  tags:
+    - initial_setup
+    - create_gitlab
 
 - name: "Get Host IP Address"
   become_user: "{{ gitlab_service_account }}"
   shell: hostname -I | awk '{print $1}'
   register: host_ip_result
+  tags:
+    - initial_setup
+    - create_gitlab
 
 - name: "Set PostgreSQL IP fact"
   set_fact:
     postgres_ip: "{{ host_ip_result.stdout }}"
+  tags:
+    - initial_setup
+    - create_gitlab
+
+- name: "Generate a secure password for GitLab root"
+  set_fact:
+    gitlab_root_password: "{{ lookup('password', '/dev/null length=15 chars=ascii_letters,digits') }}"
+  tags:
+    - initial_setup
+    - create_gitlab
 
 - name: "Create GitLab CE Container with External PostgreSQL"
   become_user: "{{ gitlab_service_account }}"
@@ -238,7 +254,9 @@
     path: "/home/{{ gitlab_service_account }}/.local/share/containers/storage/volumes/git_app_data/_data/gitlab.rb"
     block: |
       # Add Support for SSL 
-      external_url "https://{{ gitlab_server_hostname }}{{ domain }}"
+      external_url "https://{{ gitlab_server_hostname }}{{ domain }}:{{ gitlab_gui_ssl_port }}"
+
+      gitlab_rails['initial_root_password'] = "{{ gitlab_root_password }}"
 
       registry_external_url "https://{{ gitlab_server_hostname }}{{ domain }}"
 
@@ -302,16 +320,6 @@
     - initial_setup
     - create_gitlab
 
-- name: "Deploy GitLab | Wait for GitLab to be Up"
-  uri:
-    url: "https://{{ gitlab_server_hostname }}{{ domain }}:{{ gitlab_gui_ssl_port }}/users/sign_in"
-    validate_certs: no
-  register: gitlab_response
-  until: gitlab_response.status == 200
-  retries: 35
-  delay: 30
-  tags:
-    - create_gitlab
 
 - name: "Deploy GitLab | Create Systemd Service Files for GitLab Server"
   become_user: "{{ gitlab_service_account }}"
@@ -320,6 +328,31 @@
     chdir: "/home/{{ gitlab_service_account }}/.config/systemd/user/"
   tags:
     - initial_setup
+    - create_gitlab
+
+- name: "Deploy GitLab | Start {{ gitlab_server_name }} with Systemd"
+  become_user: "{{ gitlab_service_account }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ gitlab_service_account_uid }}"
+  systemd:
+    name: "container-{{ gitlab_server_name }}.service"
+    state: started
+    enabled: true
+    daemon_reload: true
+    scope: user
+  tags:
+    - initial_setup
+    - create_gitlab
+
+- name: "Deploy GitLab | Wait for GitLab to be Up"
+  uri:
+    url: "https://{{ gitlab_server_hostname }}{{ domain }}:{{ gitlab_gui_ssl_port }}/users/sign_in"
+    validate_certs: no
+  register: gitlab_response
+  until: gitlab_response.status == 200
+  retries: 75
+  delay: 10
+  tags:
     - create_gitlab
 
 - name: "Deploy GitLab | Reload Systemd Daemon"
@@ -341,31 +374,12 @@
   tags:
     - create_gitlab
 
-- name: "Retrieve GitLab Admin Password"
-  become_user: "{{ gitlab_service_account }}"
-  command: "podman exec -it {{ gitlab_server_name }} grep 'Password:' /etc/gitlab/initial_root_password"
-  register: gitlab_password_result
-  tags:
-    - retrieve_password
-
-- name: "Set GitLab Admin Password Fact"
-  set_fact:
-    gitlab_admin_password: "{{ gitlab_password_result.stdout.split('Password: ')[1] | trim }}"
-  tags:
-    - set_password_fact
-
-- name: "Deploy GitLab | Save GitLab Admin Credentials to File"
-  copy:
-    dest: "/home/{{ specific_user }}/gitlab_admin_credentials.txt"
-    content: |
-      GitLab is up and running.
-      You can access it at https://{{ gitlab_server_hostname }}{{ domain }}:{{ gitlab_gui_ssl_port }}/
-      Admin Username: root
-      Admin Password: {{ gitlab_admin_password }}
-    owner: "{{ specific_user }}"
-    mode: '0600'
-  tags:
-    - create_gitlab
+#- name: "Retrieve GitLab Admin Password"
+#  become_user: "{{ gitlab_service_account }}"
+#  command: "podman exec -it {{ gitlab_server_name }} grep 'Password:' /etc/gitlab/initial_root_password"
+#  register: gitlab_password_result
+#  tags:
+#    - retrieve_password
 
 - name: "Deploy GitLab | Print GitLab Admin Credentials"
   debug:
@@ -373,41 +387,12 @@
       GitLab is up and running.
       You can access it at https://{{ gitlab_server_hostname }}{{ domain }}:{{ gitlab_gui_ssl_port }}/
       Admin Username: root
-      Admin Password: {{ gitlab_admin_password }}
+      Admin Password: {{ gitlab_root_password }}
   tags:
     - print_credentials
 
-- name: "Deploy GitLab | Start {{ gitlab_server_name }} with Systemd"
-  become_user: "{{ gitlab_service_account }}"
-  environment:
-    XDG_RUNTIME_DIR: "/run/user/{{ gitlab_service_account_uid }}"
-  systemd:
-    name: "container-{{ gitlab_server_name }}.service"
-    state: started
-    enabled: true
-    daemon_reload: true
-    scope: user
+- name: debug output
+  debug:
+    var: " {{ gitlab_root_password }} "
   tags:
-    - initial_setup
-    - create_gitlab
-
-- name: "Deploy GitLab | Ensure {{ gitlab_server_name }} Container is Running"
-  become_user: "{{ gitlab_service_account }}"
-  podman_container:
-    name: "{{ gitlab_server_name }}"
-    state: started
-  register: gitlab_container_status
-  until: gitlab_container_status.state.running
-  retries: 75
-  delay: 10
-  tags:
-    - initial_setup
-    - create_gitlab
-
-- name: "Deploy GitLab | Fail if {{ gitlab_server_name }} Container is not Running"
-  fail:
-    msg: "The {{ gitlab_server_name }} container failed to start. Please check the logs for more details."
-  when: gitlab_container_status.state.running is not defined or not gitlab_container_status.state.running
-  tags:
-    - initial_setup
     - create_gitlab
