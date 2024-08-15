@@ -286,6 +286,7 @@
   become_user: "{{ gitlab_service_account }}"
   shell: "podman exec {{ gitlab_server_name }} gitlab-ctl reconfigure"
   when: gitlab_container_exists | bool
+  ignore_errors: true
   tags:
     - initial_setup
     - create_gitlab
