@@ -381,14 +381,26 @@
 #  tags:
 #    - retrieve_password
 
-- name: "Deploy GitLab | Print GitLab Admin Credentials"
-  debug:
-    output_file: "/home/{{ specific_user }}/gitlab_creds.txt"
-    msg: |
+- name: "Deploy GitLab | Print and Save GitLab Admin Credentials"
+  block:
+    - name: "Deploy GitLab | Print GitLab Admin Credentials"
+      debug:
+        msg: |
+          GitLab is up and running.
+          You can access it at https://{{ gitlab_server_hostname }}{{ domain }}:{{ gitlab_gui_ssl_port }}/
+          Admin Username: root
+          Admin Password: {{ gitlab_root_password }}
+      tags:
+        - create_gitlab
+
+- name: "Deploy GitLab | Save GitLab Admin Credentials to file"
+  copy:
+    content: |
       GitLab is up and running.
       You can access it at https://{{ gitlab_server_hostname }}{{ domain }}:{{ gitlab_gui_ssl_port }}/
       Admin Username: root
       Admin Password: {{ gitlab_root_password }}
+    dest: /home/{{ specific_user }}/gitlab_credentials.txt
   tags:
     - create_gitlab
 
