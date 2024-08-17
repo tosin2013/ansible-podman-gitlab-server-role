@@ -262,8 +262,8 @@
 
       letsencrypt['enable'] = false
       
-      #nginx['ssl_certificate'] = "/etc/gitlab/ssl/{{ gitlab_server_hostname }}{{ domain }}.crt"
-      #nginx['ssl_certificate_key'] = "/etc/gitlab/ssl/{{ gitlab_server_hostname }}{{ domain }}.key"
+      nginx['ssl_certificate'] = "/etc/gitlab/ssl/{{ gitlab_server_hostname }}{{ domain }}.crt"
+      nginx['ssl_certificate_key'] = "/etc/gitlab/ssl/{{ gitlab_server_hostname }}{{ domain }}.key"
       nginx['listen_port'] = {{ gitlab_gui_ssl_port }}
 
       # Disable the built-in Postgres
@@ -383,13 +383,14 @@
 
 - name: "Deploy GitLab | Print GitLab Admin Credentials"
   debug:
+    output_file: "/home/{{ specific_user }}/gitlab_creds.txt"
     msg: |
       GitLab is up and running.
       You can access it at https://{{ gitlab_server_hostname }}{{ domain }}:{{ gitlab_gui_ssl_port }}/
       Admin Username: root
       Admin Password: {{ gitlab_root_password }}
   tags:
-    - print_credentials
+    - create_gitlab
 
 - name: debug output
   debug:
