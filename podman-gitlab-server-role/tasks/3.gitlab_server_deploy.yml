@@ -196,8 +196,7 @@
     image: "{{ gitlab_server_image_name }}"
     state: present
     hostname: "{{ gitlab_server_hostname }}{{ domain }}"
-    network: gitlab_network
-    network_mode: "slirp4netns:allow_host_loopback=true"
+    network_mode: "slirp4netns:allow_host_loopback=true"  # use either network or network_mode
     restart_policy: "always"
     shm_size: "2g"
     volumes:
@@ -210,6 +209,10 @@
     env:
       GITLAB_OMNIBUS_CONFIG: |
         external_url 'https://{{ gitlab_server_hostname }}{{ domain }}:{{ gitlab_gui_ssl_port }}'
+    memory: "8g"  # change from memory_limit to memory
+    ulimits:
+      - "nofile=65536:65536"
+      - "nproc=65536:65536"
   tags:
     - initial_setup
     - create_gitlab
@@ -268,6 +271,12 @@
 
       # Disable the built-in Postgres
       postgresql['enable'] = false
+      # puma workers 
+      # Puma configuration
+      puma['worker_processes'] = 4
+      puma['min_threads'] = 4
+      puma['max_threads'] = 4
+      puma['worker_timeout'] = 60
 
       # External PostgreSQL Configuration
       gitlab_rails['db_adapter'] = 'postgresql'
@@ -276,6 +285,9 @@
       gitlab_rails['db_port'] = '5432'
       gitlab_rails['db_username'] = 'postgres'
       gitlab_rails['db_password'] = '{{ gitlab_postgres_password }}'
+
+      # Enable import sources
+      gitlab_rails['import_sources'] = ['github', 'bitbucket', 'gitlab', 'google_code', 'fogbugz', 'git', 'gitlab_project']
   when: gitlab_container_exists | bool
   tags:
     - initial_setup
