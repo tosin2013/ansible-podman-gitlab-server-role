@@ -169,7 +169,7 @@
 
 - name: "Get Host IP Address"
   become_user: "{{ gitlab_service_account }}"
-  shell: ifconfig bond0 | grep -o -E "([0-9]{1,3}[\.]){3}[0-9]{1,3}" | head -n 
+  shell: ifconfig bond0 | grep -o -E "([0-9]{1,3}[\.]){3}[0-9]{1,3}" | head -n 1
   register: host_ip_result
   tags:
     - initial_setup
